@@ -163,3 +163,4 @@ cython_debug/
 # Ignore pdf and gif files
 *.pdf
 *.gif
+.DS_Store
