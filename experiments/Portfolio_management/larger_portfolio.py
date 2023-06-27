@@ -57,6 +57,8 @@ for scene in range(num_scenarios):
 for i in range(num_scenarios):
   plt.plot(scenarios[i][0])
 
+
+
 x = cp.Variable(n)
 t = cp.Variable()
 p = cp.Parameter(n)
@@ -91,20 +93,20 @@ train, test = train_test_split(data, test_size=int(data.shape[0]*test_p), random
 init = sc.linalg.sqrtm(sc.linalg.inv(np.cov(train.T)))
 init_bval = -init@np.mean(train, axis=0)
 # Train A and b
-result1 = prob.train(lr = 0.0001, step=1600, momentum = 0.8, optimizer = "SGD", seed = s, init_A = init, init_b = init_bval, fixb = False, init_mu = 5, init_lam = 0, target_cvar = target, init_alpha = 0., mu_multiplier = 1.01, test_percentage = test_p, scenarios = scenarios, num_scenarios = num_scenarios, max_inner_iter = 1)
+result1 = prob.train(lr = 0.0001, step=10, momentum = 0.8, optimizer = "SGD", seed = s, init_A = init, init_b = init_bval, fixb = False, init_mu = 5, init_lam = 0, target_cvar = target, init_alpha = 0., mu_multiplier = 1.01, test_percentage = test_p, scenarios = scenarios, num_scenarios = num_scenarios, max_inner_iter = 1)
 df1 = result1.df
 A_fin = result1.A
 b_fin = result1.b
 
-result3 = prob.train(eps = True, lr = 0.0001, step=1600, momentum = 0.8, optimizer = "SGD", seed = s, init_A = init, init_b = init_bval, init_mu = 5, init_lam = 0,  target_cvar = target, init_alpha =0.,mu_multiplier = 1.01,test_percentage = test_p,scenarios = scenarios, num_scenarios = num_scenarios)
-df_r2 = result3.df
+# result3 = prob.train(eps = True, lr = 0.0001, step=1600, momentum = 0.8, optimizer = "SGD", seed = s, init_A = init, init_b = init_bval, init_mu = 5, init_lam = 0,  target_cvar = target, init_alpha =0.,mu_multiplier = 1.01,test_percentage = test_p,scenarios = scenarios, num_scenarios = num_scenarios)
+# df_r2 = result3.df
 
-# Grid search epsilon
-result4 = prob.grid(epslst = np.linspace(0.01, 3, 40), init_A = result3.A, init_b = result3.b, seed = s, init_alpha = 0.,test_percentage = test_p,scenarios = scenarios, num_scenarios = num_scenarios)
-dfgrid = result4.df
+# # Grid search epsilon
+# result4 = prob.grid(epslst = np.linspace(0.01, 3, 40), init_A = result3.A, init_b = result3.b, seed = s, init_alpha = 0.,test_percentage = test_p,scenarios = scenarios, num_scenarios = num_scenarios)
+# dfgrid = result4.df
 
-result5 = prob.grid(epslst = np.linspace(0.01, 3, 40), init_A = A_fin, init_b = b_fin, seed = s, init_alpha = 0.,test_percentage = test_p,scenarios = scenarios, num_scenarios = num_scenarios)
-dfgrid2 = result5.df
+# result5 = prob.grid(epslst = np.linspace(0.01, 3, 40), init_A = A_fin, init_b = b_fin, seed = s, init_alpha = 0.,test_percentage = test_p,scenarios = scenarios, num_scenarios = num_scenarios)
+# dfgrid2 = result5.df
 
-plot_tradeoff(dfgrid,dfgrid2,"Port",ind_1 = (12,100), ind_2 = (10,100))
-plot_iters(df1,"Port",logscale = 1)
+# plot_tradeoff(dfgrid,dfgrid2,"Port",ind_1 = (12,100), ind_2 = (10,100))
+# plot_iters(df1,"Port",logscale = 1)
