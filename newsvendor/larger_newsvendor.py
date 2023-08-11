@@ -12,6 +12,7 @@ from sklearn import datasets
 
 import lropt
 
+
 current_dir = path.dirname(path.abspath(getsourcefile(lambda:0)))
 sys.path.insert(0, current_dir[:current_dir.rfind(path.sep)])
 import warnings
@@ -42,7 +43,7 @@ def loss(t,y,x, x1, p_tch, alpha, data, mu = 100, l=1000, quantile = 0.95, targe
         torch.maximum(k1_tch@x1 -data@p1_tch, k1_tch@x1 - p1_tch@x) - y-alpha,
         torch.tensor(0.,requires_grad = True)))
     sums = sums/(2*(1-quantile)) + alpha
-    return t +y + l*(sums - target) + (mu/2)*(sums - target)**2, t+y, 0.5*torch.mean((torch.maximum(
+    return t +y + l*(sums - target) + (mu/2)*(sums - target)**2,         t+y,     0.5*torch.mean((torch.maximum(
         torch.maximum(k_tch@x -data@p_tch, k_tch@x - p_tch@x) - t,
         torch.tensor(0.,requires_grad = True))>=0.001).float()) + 0.5*torch.mean((torch.maximum(
         torch.maximum(k1_tch@x1 -data@p1_tch, k1_tch@x1 - p1_tch@x) - y,
@@ -60,25 +61,32 @@ def gen_demand(n, N, seed=399):
 # Generate data
 data = gen_demand(n,N*2)
 
-scenarios = {}
+import ipdb
+ipdb.set_trace()
+
 num_scenarios = 5
-for scene in range(num_scenarios):
-    np.random.seed(scene)
-    scenarios[scene] = {}
-    scenarios[scene][0] = p + np.random.normal(0,1,n)
+p_data = p + np.random.normal(0,1,(num_scenarios,n))
+
+
+# for scene in range(num_scenarios):
+#     np.random.seed(scene)
+#     scenarios[scene] = {}
+#     scenarios[scene][0] = p + np.random.normal(0,1,n)
 
 # Formulate uncertainty set
 u = lropt.UncertainParameter(n,
-                        uncertainty_set=lropt.Ellipsoidal(p=2,
-                                                    data=data, loss = loss))
+                        uncertainty_set=lropt.Ellipsoidal(data=data))
+                                                    
 # Formulate the Robust Problem
+
+
+
 x_r = cp.Variable(n)
 x_1 = cp.Variable(n)
 t = cp.Variable()
 y = cp.Variable()
-p = cp.Parameter(n)
+p = lropt.Parameter(n, data=p_data)
 # p1 = cp.Parameter(n)
-p.value = scenarios[0][0]
 # p1.value = scenarios[0][1]
 objective = cp.Minimize(t+y)
 
@@ -87,29 +95,34 @@ constraints += [cp.maximum(k1@x_1 - p1@x_1, k1@x_1 - p1@u) <= y]
 
 constraints += [x_r >= 0, x_r >= x_1]
 
-prob = lropt.RobustProblem(objective, constraints)
-target = -0.05
+def f_tch(t,y,x_r,x_1,p,u):
+    return t + y
+def g_tch(t,y,x_r,x_1,p,u):
+    return torch.maximum(k_tch @ x_r - p @ x_r, k_tch @ x_r - p @ u) - t + torch.maximum(k1_tch@x_1 - p1_tch@x_1, k1_tch@x_1 - p1_tch@u) - y
+
+prob = lropt.RobustProblem(objective, constraints, f_tch, [g_tch])
+
 test_p = 0.5
 s = 5
 train, test = train_test_split(data, test_size=int(data.shape[0]*test_p), random_state=s)
 init = sc.linalg.sqrtm(sc.linalg.inv(np.cov(train.T)))
 init_bval = -init@np.mean(train, axis=0)
 # Train A and b
-result1 = prob.train(lr = 0.00001, step=800, momentum = 0.8, optimizer = "SGD", seed = s, init_A = init, init_b = init_bval, fixb = False, init_mu = 5, init_lam = 0, target_cvar = target, init_alpha = 0., mu_multiplier = 1.01, test_percentage = test_p, scenarios = scenarios, num_scenarios = num_scenarios, max_inner_iter = 5)
-df1 = result1.df
-A_fin = result1.A
-b_fin = result1.b
+result1 = prob.train(lr = 0.00001, step=5, momentum = 0.8, optimizer = "SGD", seed = s, init_A = init, init_b = init_bval,  init_mu = 5, init_alpha = 0., mu_multiplier = 1.01, test_percentage = test_p, max_inner_iter = 5)
+# df1 = result1.df
+# A_fin = result1.A
+# b_fin = result1.b
 
-result3 = prob.train(eps = True, lr = 0.00001, step=800, momentum = 0.8, optimizer = "SGD", seed = s, init_A = init, init_b = init_bval, init_mu = 5, init_lam = 0,  target_cvar = target, init_alpha =0.,mu_multiplier = 1.01,test_percentage = test_p,scenarios = scenarios, num_scenarios = num_scenarios)
-df_r2 = result3.df
+# result3 = prob.train(eps = True, lr = 0.00001, step=1, momentum = 0.8, optimizer = "SGD", seed = s, init_A = init, init_b = init_bval, init_mu = 5, init_alpha =0.,mu_multiplier = 1.01,test_percentage = test_p)
+# df_r2 = result3.df
 
-# Grid search epsilon
-result4 = prob.grid(epslst = np.linspace(0.01, 3, 40), init_A = result3.A, init_b = result3.b, seed = s, init_alpha = 0.,test_percentage = test_p,scenarios = scenarios, num_scenarios = num_scenarios)
-dfgrid = result4.df
+# # Grid search epsilon
+# result4 = prob.grid(epslst = np.linspace(0.01, 3, 40), init_A = result3.A, init_b = result3.b, seed = s, init_alpha = 0.,test_percentage = test_p,scenarios = scenarios, num_scenarios = num_scenarios)
+# dfgrid = result4.df
 
-result5 = prob.grid(epslst = np.linspace(0.01, 3, 40), init_A = A_fin, init_b = b_fin, seed = s, init_alpha = 0.,test_percentage = test_p,scenarios = scenarios, num_scenarios = num_scenarios)
-dfgrid2 = result5.df
+# result5 = prob.grid(epslst = np.linspace(0.01, 3, 40), init_A = A_fin, init_b = b_fin, seed = s, init_alpha = 0.,test_percentage = test_p,scenarios = scenarios, num_scenarios = num_scenarios)
+# dfgrid2 = result5.df
 
-plot_tradeoff(dfgrid,dfgrid2,"News",ind_1=(10,20),ind_2=(0,30) )
+# plot_tradeoff(dfgrid,dfgrid2,"News",ind_1=(10,20),ind_2=(0,30) )
 
-plot_iters(df1,"News", steps = 800, logscale = 1)
+# plot_iters(df1,"News", steps = 800, logscale = 1)
