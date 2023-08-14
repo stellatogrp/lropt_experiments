@@ -195,7 +195,7 @@ def plot_contours_line(x, y, set, g_level, prob_list, num_scenarios, train, titl
                          colors=["red"], linewidths=[2])
         cur_ind += 1
     if standard:
-        post = "Mean-Var"
+        post = "Mean-Variance"
     else:
         post = "Reshaped"
     fig.suptitle(post+" set", fontsize=30)
