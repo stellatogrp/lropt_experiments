@@ -6,7 +6,7 @@ Amit Soloman,
 and [Bartolomeo Stellato](https://stellato.io/),
 and contains the Python source code to
 reproduce the experiments in our paper
-"[Learning Decision-Focused Uncertainty in Robust Optimization]([http://arxiv.org/abs/](https://arxiv.org/abs/2305.19225))."
+"[Learning Decision-Focused Uncertainty in Robust Optimization](https://arxiv.org/abs/2305.19225)."
 
 If you find this repository helpful in your publications,
 please consider citing our paper.
