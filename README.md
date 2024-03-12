@@ -1,6 +1,7 @@
 # lropt_experiments
 This repository is by
 [Irina Wang](https://sites.google.com/view/irina-wang),
+Amit Soloman,
 [Bart Van Parys](https://mitsloan.mit.edu/faculty/directory/bart-p-g-van-parys),
 and [Bartolomeo Stellato](https://stellato.io/),
 and contains the Python source code to
