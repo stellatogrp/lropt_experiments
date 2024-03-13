@@ -25,46 +25,55 @@ Numerical experiments show that our method outperforms traditional approaches in
 ## Dependencies
 Install dependencies with
 ```
-pip install lropt
+pip install git+https://github.com/stellatogrp/lropt.git@develop#egg=lropt[dev]
 ```
 
 ## Instructions
 ### Running experiments
-Experiments can from the root folder using the commands below.
+Experiments can be run from the root folder using the commands below.
 
-Inventory Problem (for m=8). For m=4, replace 8 with 4 in the following file names. 
+Inventory Problem
 ```
-python inventory/make_dir.py
-python inventory/inventory_8_LRO_RO.py --foldername /results/inventory_results/results0/ --eta 0.01
-python inventory/inventory_8_LRO_RO.py --foldername /results/inventory_results/results1/ --eta 0.03
-python inventory/inventory_8_LRO_RO.py --foldername /results/inventory_results/results2/ --eta 0.05
-python inventory/inventory_8_LRO_RO.py --foldername /results/inventory_results/results3/ --eta 0.08
-python inventory/inventory_8_LRO_RO.py --foldername /results/inventory_results/results4/ --eta 0.10
-python inventory/inventory_8_LRO_RO.py --foldername /results/inventory_results/results5/ --eta 0.15
-python inventory/inventory_8_LRO_RO.py --foldername /results/inventory_results/results6/ --eta 0.20
-python inventory/inventory_8_LRO_RO.py --foldername /results/inventory_results/results7/ --eta 0.30
-python inventory/inventory_8_DRO.py --foldername /results/inventory_results/results8/ --eta 0.30
+#!/bin/bash
+
+# Create directories
+for i in {0..8}; do
+  mkdir -p "results/inventory_results/results$i"
+done
+
+# Run experiments and plot results
+etas=(0.01 0.03 0.05 0.08 0.10 0.15 0.20 0.30)
+
+for i in "${!etas[@]}"; do
+    python inventory/inventory_4_LRO_RO.py --foldername "/results/inventory_results/results$i/" --eta "${etas[$i]}"
+    python inventory/inventory_8_LRO_RO.py --foldername "/results/inventory_results/results$i/" --eta "${etas[$i]}"
+done
+python inventory/inventory_4_DRO.py --foldername "/results/inventory_results/results8/" 
+python inventory/inventory_8_DRO.py --foldername "/results/inventory_results/results8/"
+python inventory/plot_4.py --foldername /results/inventory_results/
 python inventory/plot_8.py --foldername /results/inventory_results/
 ```
-Portfolio Optimization (for m=10). For m=5, replace 10 with 5 in the following file names. 
+
+Portfolio Optimization
 ```
-python portfolio/make_dir.py
-python portfolio/portfolio_10_LRO_RO.py --foldername /results/portfolio_results/results0/ --eta 0.01
-python portfolio/portfolio_10_LRO_RO.py --foldername /results/portfolio_results/results1/ --eta 0.03
-python portfolio/portfolio_10_LRO_RO.py --foldername /results/portfolio_results/results2/ --eta 0.05
-python portfolio/portfolio_10_LRO_RO.py --foldername /results/portfolio_results/results3/ --eta 0.08
-python portfolio/portfolio_10_LRO_RO.py --foldername /results/portfolio_results/results4/ --eta 0.10
-python portfolio/portfolio_10_LRO_RO.py --foldername /results/portfolio_results/results5/ --eta 0.15
-python portfolio/portfolio_10_LRO_RO.py --foldername /results/portfolio_results/results6/ --eta 0.20
-python portfolio/portfolio_10_LRO_RO.py --foldername /results/portfolio_results/results7/ --eta 0.30
-python portfolio/portfolio_10_MRO.py --foldername /results/portfolio_results/results8/ --eta 0.01
-python portfolio/portfolio_10_MRO.py --foldername /results/portfolio_results/results9/ --eta 0.03
-python portfolio/portfolio_10_MRO.py --foldername /results/portfolio_results/results10/ --eta 0.05
-python portfolio/portfolio_10_MRO.py --foldername /results/portfolio_results/results11/ --eta 0.08
-python portfolio/portfolio_10_MRO.py --foldername /results/portfolio_results/results12/ --eta 0.10
-python portfolio/portfolio_10_MRO.py --foldername /results/portfolio_results/results13/ --eta 0.15
-python portfolio/portfolio_10_MRO.py --foldername /results/portfolio_results/results14/ --eta 0.20
-python portfolio/portfolio_10_MRO.py --foldername /results/portfolio_results/results15/ --eta 0.30
-python portfolio/portfolio_10_DRO.py --foldername /results/portfolio_results/results16/ --eta 0.30
+#!/bin/bash
+
+# Create directories
+for i in {0..16}; do
+  mkdir -p "results/portfolio_results/results$i"
+done
+
+# Run experiments and plot results
+etas=(0.01 0.03 0.05 0.08 0.10 0.15 0.20 0.30)
+
+for i in "${!etas[@]}"; do
+    python portfolio/portfolio_5_LRO_RO.py --foldername "/results/portfolio_results/results$i/" --eta "${etas[$i]}"
+    python portfolio/portfolio_10_LRO_RO.py --foldername "/results/portfolio_results/results$i/" --eta "${etas[$i]}"
+    python portfolio/portfolio_5_MRO.py --foldername "/results/portfolio_results/results$((i+8))/" --eta "${etas[$i]}"
+    python portfolio/portfolio_10_MRO.py --foldername "/results/portfolio_results/results$((i+8))/" --eta "${etas[$i]}"
+done
+python portfolio/portfolio_5_DRO.py --foldername /results/portfolio_results/results16/
+python portfolio/portfolio_10_DRO.py --foldername /results/portfolio_results/results16/ 
+python portfolio/plot_5.py --foldername /results/portfolio_results/
 python portfolio/plot_10.py --foldername /results/portfolio_results/
 ```
