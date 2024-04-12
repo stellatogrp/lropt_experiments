@@ -7,7 +7,7 @@ and [Bartolomeo Stellato](https://stellato.io/),
 and contains the Python source code to
 reproduce the experiments in our paper
 "[Learning Decision-Focused Uncertainty Sets in Robust Optimization](https://arxiv.org/abs/2305.19225)."
-The experiments rely on our packagee [LROPT](https://github.com/stellatogrp/lropt).
+The experiments rely on our package [LROPT](https://github.com/stellatogrp/lropt).
 
 
 If you find this repository helpful in your publications,
