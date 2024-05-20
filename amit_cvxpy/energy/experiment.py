@@ -164,6 +164,7 @@ def box_robust_dcopf_problem_param(mu_init, sigma_init, demand, wind, allow_slac
 
 
 
+
 def box_robust_dcopf_problem_param_l_max(mu_init, sigma_init, demand, wind, allow_slack=False, quadratic_cost=False, gamma=0, train = False, traindat = None, inita=None, initb=None, initeps=1, p=np.inf, MRO = False, K=1):
 
     
@@ -225,11 +226,13 @@ def box_robust_dcopf_problem_param_l_max(mu_init, sigma_init, demand, wind, allo
     # aux. variables for robust constraints
     # z = cp.Variable((2*G + 2*L,D), name="z")
     
+    # aux. variables to ensure feasibility
+    if allow_slack:
+        slack = cp.Variable(2*G + 2*L, pos=True, name="slack")
+    
     # basic det constraints
-    # box support constraints
-    consts = [-A[g,:]@u - rp[g]<=0]
     flow = ptdf @ ((gen2bus @ p) + (wind2bus @ w) - d)
-    consts += [
+    consts = [
         cp.sum(p) + cp.sum(w) == cp.sum(d),
         p + rp <= pmax,
         p - rm >= pmin, 
@@ -237,12 +240,54 @@ def box_robust_dcopf_problem_param_l_max(mu_init, sigma_init, demand, wind, allo
          flow + fRAMp == smax * FR,
         -flow + fRAMm == smax * FR
     ]
+    maxcons = []
+    # box support constraints
+    for g in range(G):
+        if allow_slack:
+            maxcons.append((-A[g,:]/A_base)@u - rp[g] - slack[g]/slack_base )
+        else:
+            maxcons.append(-A[g,:]@u - rp[g])
+        if allow_slack:
+            maxcons.append(((A[g,:]/A_base))@u- rm[g] - slack[g+G]/slack_base)
+        else:
+            maxcons.append(((A[g,:]/A_base))@u - rm[g])
+    for l in range(L):
+        Bl = cp.reshape(ptdf[l,:] @ (wind2bus - (gen2bus @ A/A_base)), D)
+        if allow_slack:
+            maxcons.append(Bl@u- fRAMp[l] - slack[2*G+l]/slack_base)
+        else:
+            maxcons.append(Bl@u - fRAMp[l])
+        if allow_slack:
+            maxcons.append(-Bl@u - fRAMm[l] - slack[2*G+L+l]/slack_base) 
+        else:
+            maxcons.append(-Bl@u -  fRAMm[l])
+    
+    consts.append(cp.maximum(*maxcons)<=0)
+
     # objective
-    objective = (cE.T @ p) + cp.sum_squares(cp.multiply(cE_quad, p)) + (cR.T @ (rp + rm)) 
+    cost_E = (cE.T @ p)
+    if quadratic_cost:
+        cost_E_quad = cp.sum_squares(cp.multiply(cE_quad, p))
+    else:
+        cost_E_quad = 0                         
+    cost_R = (cR.T @ (rp + rm))
+    objective = cost_E + cost_E_quad + cost_R
+    
+    if allow_slack:
+        thevars = [p, rp, rm, A, fRAMp, fRAMm,slack]
+    else:
+        thevars = [p, rp, rm, A, fRAMp, fRAMm]
+    x = cp.hstack([v.flatten() for v in thevars])
+    regularization = gamma * cp.sum_squares(x)
+    objective += regularization
+    
+    if allow_slack:
+        penalty_slack = cp.sum(slack) * obj_base * 1e3
+        objective += penalty_slack
     
     theprob = lropt.RobustProblem(cp.Minimize(objective), consts, eval_exp = objective)
     
-    return theprob, [d, w], consts
+    return theprob, thevars, [d, w], consts
 
 def create_historical_data(w_fcst, N=1000, SEED=42, metadata=False, corr=0.1, rel_sigma=[0.15, 0.15]):
     mu = np.zeros(D)
@@ -279,7 +324,7 @@ nbins = 10
 bins = [np.linspace(w_range[0]*w[i], w_range[1]*w[i], nbins+1) for i in range(D)]
 
 # create a large set of forecast errors from different wind scenarios
-N_samples = 2000
+N_samples = 100
 train_errors_in_bins = [[[] for bi in range(nbins+3)] for i in range(D)]
 all_errors = []
 for i in trange(N_samples):
@@ -328,16 +373,17 @@ def gen_dw_data(num, d,w, seed=SEED):
 
 d_dat, w_dat = gen_dw_data(int(N_samples*(1-TEST_PERC)),d,w)
 
-
-prob_lroptmax, theparamslroptmax, _ = box_robust_dcopf_problem_param_l_max(mu_init, sigma_init, d, w, allow_slack=False, quadratic_cost=True)
+prob_lroptmax, theparamslroptmax, _,_ = box_robust_dcopf_problem_param_l_max(mu_init, sigma_init, d, w, allow_slack=False, quadratic_cost=True)
 prob_lroptmax.solve(solver="CLARABEL")
 
-prob_lropt, theparamslropt, _ = box_robust_dcopf_problem_param_l_max(mu_init, sigma_init, d_dat, w_dat, allow_slack=False, quadratic_cost=True, train=True, traindat=train)
+prob_lropt, thevarslropt, theparamslropt, _ = box_robust_dcopf_problem_param_l_max(mu_init, sigma_init, d_dat, w_dat, allow_slack=False, quadratic_cost=True, train=True, traindat=train, p=2, MRO=True, K=5, initeps=0.1)
 
 init_aval = np.diag(np.array(sigma_init))
-init_bval =mu_init
-# np.random.seed(0)
-# init_aval = 0.5*np.random.rand(2,2)+np.eye(2)
-# init_bval = -init_aval@mu_init
+init_bval = mu_init
+init_aval = np.eye(2)
+init_bval = np.zeros(2)
+result = prob_lropt.train(init_eps = 1000.0, lr = 0.0000001,num_iter=5, optimizer = "SGD", seed = SEED+1, init_A =init_aval, init_b = init_bval, init_lam = 50, init_mu = 10, mu_multiplier=1.01, init_alpha = -0.0, test_percentage = TEST_PERC, save_history = False, lr_step_size = 100, lr_gamma = 0.5, position = False, random_init = False, num_random_init=5, parallel = False, kappa=0., eta=0.3, contextual=True)
 
-result = prob_lropt.train(lr = 0.0001,num_iter=10, optimizer = "SGD", seed = SEED+1, init_A = init_aval, init_b = init_bval, init_lam = 0.5, init_mu = 1.5, mu_multiplier=1.01, init_alpha = -0.0, test_percentage = TEST_PERC, save_history = False, lr_step_size = 50, lr_gamma = 0.2, position = False, random_init = True, num_random_init=5, parallel = False, kappa=-0.5, eta=0.05)
+result_reshape = prob_lropt.grid(epslst = np.linspace(0.0001,5, 10), init_A = result.A, init_b = result.b, seed = SEED, init_alpha = 0., test_percentage = 
+TEST_PERC, contextual = True, linear = result._linear)
+dfgrid2 = result_reshape.df
