@@ -12,6 +12,8 @@ from utils import plot_tradeoff,plot_iters, plot_contours, plot_contours_line
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 import warnings
+from lropt import Trainer
+
 warnings.filterwarnings("ignore")
 plt.rcParams.update({
     "text.usetex":True,
@@ -80,8 +82,21 @@ np.random.seed(15)
 # initn = np.random.rand(n,2)
 # init_bvaln = np.mean(train, axis=0)
 # Train A and b
-result = prob.train(lr=0.0001, train_size = False, num_iter=3, optimizer="SGD",seed=8, init_A=init, init_b=init_bval, init_lam=1, init_mu=1,
+trainer = Trainer(prob)
+result = trainer.train(lr=0.0001, train_size = False, num_iter=3, optimizer="SGD",seed=8, init_A=init, init_b=init_bval, init_lam=1, init_mu=1,
                     mu_multiplier=1.001, kappa=0., init_alpha=0., test_percentage = test_p,save_history = True, quantiles = (0.4,0.6), lr_step_size = 50, lr_gamma = 0.5, random_init = False, num_random_init = 5, parallel = False, position = False, eta=0.05)
 df = result.df
 A_fin = result.A
 b_fin = result.b
+
+
+
+# # Grid search epsilon
+# eps_list = np.linspace(0.5, 2.5, 2)
+# result4 = prob.grid(epslst=eps_list, init_A=init,
+#                     init_b=init_bval, seed=8,
+#                     init_alpha=0., test_percentage=test_p, quantiles = (0.4, 0.6))
+# dfgrid = result4.df
+
+# result5 = prob.grid(epslst=eps_list,init_A=A_fin, init_b=b_fin, seed=s,init_alpha=0., test_percentage=test_p,quantiles = (0.4,0.6))
+# dfgrid2 = result5.df
