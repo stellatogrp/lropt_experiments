@@ -267,6 +267,7 @@ policy = trainer.create_cvxpylayer(parameters = all_params, variables = [uall])
 
 class InvSimulator(lropt.Simulator):
     def simulate(self, x, u):
+        u = u[0]
         x_hat,d_star_val, q_hat, d_hat, y_hat, u_hat, p_xhat, h_xhat, w, tval, e_ind, p_ind, h_ind,c_ind,Ymat = x
         t = int(tval[0])
         assert x_hat.shape[0] == u.shape[0]
@@ -297,6 +298,7 @@ class InvSimulator(lropt.Simulator):
         return x
 
     def stage_cost_eval(self,x,u):
+        u = u[0]
         x_hat, d_star_val,q_hat, d_hat, y_hat, u_hat, p_xhat, h_xhat, w, t, e_ind, p_ind, h_ind,c_ind,Ymat_ref = x
         assert x_hat.shape[0] == u.shape[0]
         t = int(t[0])
@@ -307,6 +309,7 @@ class InvSimulator(lropt.Simulator):
 
 
     def stage_cost(self,x,u):
+        u = u[0]
         x_hat, d_star_val,q_hat, d_hat, y_hat, u_hat, p_xhat, h_xhat, w, t, e_ind, p_ind, h_ind,c_ind,Ymat_ref = x
         assert x_hat.shape[0] == u.shape[0]
         batch_size = x_hat.shape[0] 
@@ -314,6 +317,7 @@ class InvSimulator(lropt.Simulator):
 
 
     def constraint_cost(self,x,u,alpha):
+        u = u[0]
         eta = 0.05
         x_hat,d_star_val, q_hat,  d_hat, y_hat, u_hat, p_xhat, h_xhat, w, t, e_ind, p_ind, h_ind,c_ind,Ymat_ref = x
         y_hatmat = u[:,3*K:4*K]
@@ -356,7 +360,7 @@ simulator = InvSimulator()
 epochs = 21
 batch_size = 5
 test_batch_size = 5
-lr = 0.01
+lr = 0.001
 # init_x0 = simulator.init_state(seed = 0, batch_size = 100)
 init_a = cov[:K,:K]
 init_b = np.zeros(K)
