@@ -13,14 +13,14 @@ def plot_tradeoff(df_standard, df_reshape, title, ind_1=(0, 100), ind_2=(0, 100)
     beg2, end2 = ind_2
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 3))
-    ax1.plot(np.mean(np.vstack(df_standard['Violation_val']), axis=1)[beg1:end1], np.mean(
+    ax1.plot(np.mean(np.vstack(df_standard['Violations_test']), axis=1)[beg1:end1], np.mean(
         np.vstack(df_standard['Test_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Standard set")
-    ax1.fill(np.append(np.quantile(np.vstack(df_standard['Violation_val']), 0.1, axis=1)[beg1:end1], np.quantile(np.vstack(df_standard['Violation_val']), 0.9, axis=1)[beg1:end1][::-1]), np.append(
+    ax1.fill(np.append(np.quantile(np.vstack(df_standard['Violations_test']), 0.1, axis=1)[beg1:end1], np.quantile(np.vstack(df_standard['Violations_test']), 0.9, axis=1)[beg1:end1][::-1]), np.append(
         np.quantile(np.vstack(df_standard['Test_val']), 0.1, axis=1)[beg1:end1], np.quantile(np.vstack(df_standard['Test_val']), 0.90, axis=1)[beg1:end1][::-1]), color="tab:blue", alpha=0.2)
 
-    ax1.plot(np.mean(np.vstack(df_reshape['Violation_val']), axis=1)[beg2:end2], np.mean(
+    ax1.plot(np.mean(np.vstack(df_reshape['Violations_test']), axis=1)[beg2:end2], np.mean(
         np.vstack(df_reshape['Test_val']), axis=1)[beg2:end2], color="tab:orange", label=r"Reshaped set")
-    ax1.fill(np.append(np.quantile(np.vstack(df_reshape['Violation_val']), 0.1, axis=1)[beg2:end2], np.quantile(np.vstack(df_reshape['Violation_val']), 0.9, axis=1)[beg2:end2][::-1]), np.append(
+    ax1.fill(np.append(np.quantile(np.vstack(df_reshape['Violations_test']), 0.1, axis=1)[beg2:end2], np.quantile(np.vstack(df_reshape['Violations_test']), 0.9, axis=1)[beg2:end2][::-1]), np.append(
         np.quantile(np.vstack(df_reshape['Test_val']), 0.1, axis=1)[beg2:end2], np.quantile(np.vstack(df_reshape['Test_val']), 0.90, axis=1)[beg2:end2][::-1]), color="tab:orange", alpha=0.2)
 
     ax1.ticklabel_format(style="sci", axis='y',
@@ -29,14 +29,14 @@ def plot_tradeoff(df_standard, df_reshape, title, ind_1=(0, 100), ind_2=(0, 100)
     ax1.set_ylabel("Objective value")
     ax1.legend()
 
-    ax2.plot(np.mean(np.vstack(df_standard['Violations']), axis=1)[beg1:end1], np.mean(np.vstack(
+    ax2.plot(np.mean(np.vstack(df_standard['Avg_prob_test']), axis=1)[beg1:end1], np.mean(np.vstack(
         df_standard['Test_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Standard set")
-    ax2.fill(np.append(np.quantile(np.vstack(df_standard['Violations']), 0.1, axis=1)[beg1:end1], np.quantile(np.vstack(df_standard['Violations']), 0.9, axis=1)[beg1:end1][::-1]), np.append(
+    ax2.fill(np.append(np.quantile(np.vstack(df_standard['Avg_prob_test']), 0.1, axis=1)[beg1:end1], np.quantile(np.vstack(df_standard['Avg_prob_test']), 0.9, axis=1)[beg1:end1][::-1]), np.append(
         np.quantile(np.vstack(df_standard['Test_val']), 0.1, axis=1)[beg1:end1], np.quantile(np.vstack(df_standard['Test_val']), 0.90, axis=1)[beg1:end1][::-1]), color="tab:blue", alpha=0.2)
 
-    ax2.plot(np.mean(np.vstack(df_reshape['Violations']), axis=1)[beg2:end2], np.mean(np.vstack(
+    ax2.plot(np.mean(np.vstack(df_reshape['Avg_prob_test']), axis=1)[beg2:end2], np.mean(np.vstack(
         df_reshape['Test_val']), axis=1)[beg2:end2], color="tab:orange", label=r"Reshaped set")
-    ax2.fill(np.append(np.quantile(np.vstack(df_reshape['Violations']), 0.1, axis=1)[beg2:end2], np.quantile(np.vstack(df_reshape['Violations']), 0.9, axis=1)[beg2:end2][::-1]), np.append(
+    ax2.fill(np.append(np.quantile(np.vstack(df_reshape['Avg_prob_test']), 0.1, axis=1)[beg2:end2], np.quantile(np.vstack(df_reshape['Avg_prob_test']), 0.9, axis=1)[beg2:end2][::-1]), np.append(
         np.quantile(np.vstack(df_reshape['Test_val']), 0.1, axis=1)[beg2:end2], np.quantile(np.vstack(df_reshape['Test_val']), 0.90, axis=1)[beg2:end2][::-1]), color="tab:orange", alpha=0.2)
     ax2.set_xlabel("Probability of constraint violation")
     ax2.set_ylabel("Objective value")
@@ -56,13 +56,13 @@ def plot_iters(dftrain, title, steps=2000, logscale=True):
     })
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 3))
 
-    ax1.plot(dftrain["Violation_val"][:steps],
-             label="Out-of-sample empirical CVaR")
-    ax1.plot(dftrain["Violation_train"][:steps],
+    # ax1.plot(dftrain["Violation_val"][:steps],
+    #          label="Out-of-sample empirical CVaR")
+    ax1.plot(dftrain["Violations_train"][:steps],
              label="In-sample empirical CVaR", linestyle="--")
 
     ax1.set_xlabel("Iterations")
-    ax1.hlines(xmin=0, xmax=dftrain["Violation_val"][:steps].shape[0],
+    ax1.hlines(xmin=0, xmax=dftrain["Violations_train"][:steps].shape[0],
                y=-0.0, linestyles="--", color="black", label="Target threshold: 0")
     ax1.legend()
     ax2.plot(dftrain["Test_val"][:steps], label="Objective value")

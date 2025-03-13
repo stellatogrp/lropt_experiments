@@ -23,21 +23,7 @@ plt.rcParams.update({
 # Formulate constants
 n = 2
 N = 500
-test_perc = 0.99
-# k = npr.uniform(1,4,n)
-# p = k + npr.uniform(2,5,n)
 k_init = np.array([4.,5.])
-p = np.array([5,6.5])
-# k_tch = torch.tensor(k, requires_grad = True)
-# p_tch = torch.tensor(p, requires_grad = True)
-
-def gen_demand_intro(N, seed):
-    np.random.seed(seed)
-    sig = np.array([[0.6,-0.3],[-0.3,0.1]])
-    mu = np.array((1.1,1.7))
-    norms = np.random.multivariate_normal(mu,sig, N)
-    d_train = np.exp(norms)
-    return d_train
 
 def gen_demand_cor(N,seed,x):
     np.random.seed(seed)
@@ -49,18 +35,28 @@ def gen_demand_cor(N,seed,x):
         newpoint = np.random.multivariate_normal(mu+mu_shift,sig)
         points_list.append(newpoint)
     return np.vstack(points_list)
+        
 
-test_p = 0.9
-s = 8
+s = 1
 np.random.seed(s)
-num_scenarios = N
-num_reps = int(N/num_scenarios)
-k_data = np.maximum(0.5,k_init + np.random.normal(0,3,(num_scenarios,n)))
-p_data = k_data + np.maximum(0,np.random.normal(0,3,(num_scenarios,n)))
+num_reps = int(N/N)
+k_data = np.maximum(0.5,k_init + np.random.normal(0,3,(N,n)))
+p_data = k_data + np.maximum(0,np.random.normal(0,3,(N,n)))
 p_data = np.vstack([p_data]*num_reps)
 k_data = np.vstack([k_data]*num_reps)
 
 data = gen_demand_cor(N,seed=5,x=p_data)
+test_p = 0.9
+
+# split dataset
+test_indices = np.random.choice(N,int(0.9*N), replace=False)
+train_indices = [i for i in range(N) if i not in test_indices]
+train = np.array([data[i] for i in train_indices])
+test = np.array([data[i] for i in test_indices])
+k_train = np.array([k_data[i] for i in train_indices])
+k_test = np.array([k_data[i] for i in test_indices])
+p_train = np.array([p_data[i] for i in train_indices])
+p_test = np.array([p_data[i] for i in test_indices])
 
 def gen_weights_bias(k_data,p_data, data):
     stacked_context = np.hstack([p_data,k_data,np.ones((N,1))])
@@ -71,16 +67,6 @@ def gen_weights_bias(k_data,p_data, data):
     mults_mean_bias = mults_mean[:,-1]
     return mults_mean_weight, mults_mean_bias
 mults_mean_weight, mults_mean_bias = gen_weights_bias(k_data,p_data, data)
-
-# setup intial A, b
-test_indices = np.random.choice(N,int(0.9*N), replace=False)
-train_indices = [i for i in range(N) if i not in test_indices]
-train = np.array([data[i] for i in train_indices])
-test = np.array([data[i] for i in test_indices])
-k_train = np.array([k_data[i] for i in train_indices])
-k_test = np.array([k_data[i] for i in test_indices])
-p_train = np.array([p_data[i] for i in train_indices])
-p_test = np.array([p_data[i] for i in test_indices])
 
 # Formulate uncertainty set
 u = lropt.UncertainParameter(n,
@@ -100,20 +86,11 @@ constraints += [x_r >= 0]
 eval_exp = k@x_r + cp.maximum(-p[0]*x_r[0] - p[1]*x_r[1],-p[0]*x_r[0] - p[1]*u[1], -p[0]*u[0] - p[1]*x_r[1], -p[0]*u[0]- p[1]*u[1]) 
 
 prob = lropt.RobustProblem(objective, constraints,eval_exp = eval_exp)
-target = -0.0
 
-# setup intial A, b
-init = sc.linalg.sqrtm(np.cov(train.T))
-init_bval = np.mean(train, axis=0)
-
-np.random.seed(15)
-#initn = 5*np.random.rand(n,2)
-# initn = np.eye(n) + 5*np.random.rand(n,2)
-# init_bvaln = np.mean(train, axis=0)
 initn = sc.linalg.sqrtm(np.cov(train.T))
 init_bvaln = np.mean(train, axis=0)
-# init_bias = np.hstack([initn.flatten(),np.array([6,7])])
-# init_weight = np.vstack([np.zeros((4,4)),np.array([[-0.4,0,0,0],[0,-0.4,0,0]])])
+
+# initialize linear weights and bias
 init_bias = np.hstack([initn.flatten(),mults_mean_bias])
 init_weight = np.vstack([np.zeros((4,4)),mults_mean_weight])
 
@@ -121,9 +98,9 @@ init_weight = np.vstack([np.zeros((4,4)),mults_mean_weight])
 from lropt import Trainer
 trainer = Trainer(prob)
 trainer_settings = lropt.TrainerSettings()
+
 trainer_settings.lr=0.0001
-trainer_settings.train_size = False
-trainer_settings.num_iter=1
+trainer_settings.num_iter=300
 trainer_settings.optimizer="SGD"
 trainer_settings.seed=5
 trainer_settings.init_A=initn
@@ -133,12 +110,11 @@ trainer_settings.init_mu=0.5
 trainer_settings.mu_multiplier=1.001
 trainer_settings.test_percentage = test_p
 trainer_settings.save_history = True
-trainer_settings.quantiles = (0.4,0.6)
 trainer_settings.lr_step_size = 50
 trainer_settings.lr_gamma = 0.5
 trainer_settings.random_init = False
-trainer_settings.num_random_init = 3
-trainer_settings.parallel = False
+trainer_settings.num_random_init = 1
+trainer_settings.parallel = True
 trainer_settings.position = False
 trainer_settings.eta=0.3
 trainer_settings.contextual = True
@@ -148,3 +124,4 @@ result = trainer.train(trainer_settings=trainer_settings)
 df = result.df
 A_fin = result.A
 b_fin = result.b
+
