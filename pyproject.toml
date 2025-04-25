@@ -20,6 +20,9 @@ dependencies = [
     "lropt @ git+https://github.com/stellatogrp/lropt@develop",
 ]
 
+[tool.setuptools.packages.find]
+include = ["lropt_experiments"]
+
 [project.optional-dependencies]
 dev = [
     "pytest",
