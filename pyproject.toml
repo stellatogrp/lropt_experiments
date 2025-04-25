@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lropt_experiments"
+version = "0.1.0" # You can change this version
+description = "Experiments using lropt for optimization under uncertainty."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "Irina Wang", email = "iywang@princeton.edu" }, 
+    { name = "Bartolomeo Stellato", email = "bstellato@princeton.edu" }, 
+    # TODO: add everyone
+]
+dependencies = [
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "lropt @ git+https://github.com/stellatogrp/lropt@develop",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pre-commit",
+    "ruff",
+    "ruff-lsp",
+    "ipython",
+    "ipdb",
+]
+
+[tool.ruff]
+exclude = [
+    "build",
+    "examples",
+    "instances",
+    "docs",
+    "cvxpy_dpp",
+    "*__init__.py",
+]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

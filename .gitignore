@@ -164,3 +164,4 @@ cython_debug/
 *.pdf
 *.gif
 .DS_Store
+.aider*
