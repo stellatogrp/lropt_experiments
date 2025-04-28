@@ -246,9 +246,14 @@ def main_func(cfg):
         plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_test']), axis=1)[beg2:end2], np.mean(np.vstack(
         dfgrid3['Test_val']), axis=1)[beg2:end2], color="tab:green", label="Linear pretrained test set", marker="s", zorder=2)
         
-    plt.scatter(df_valid["Avg_prob_validate"][0],df_valid["Validate_val"][0], color="tab:orange", label="Linear trained test set", marker="^", zorder=1)
-    plt.scatter(df_test["Avg_prob_test"][0],df_test["Test_val"][0], color="tab:orange", label="Linear trained validate set", marker="s", zorder=1)
-    
+    plt.scatter(df_valid["Avg_prob_validate"][0],df_valid["Validate_val"][0], color="tab:orange", label="Linear trained validate set", marker="^", zorder=1)
+    plt.scatter(df_test["Avg_prob_test"][0],df_test["Test_val"][0], color="tab:orange", label="Linear trained test set", marker="s", zorder=1)
+
+    plt.plot(np.mean(np.vstack(dfgrid4['Avg_prob_test']), axis=1)[beg2:end2], np.mean(np.vstack(
+        dfgrid4['Test_val']), axis=1)[beg2:end2], color="tab:red", label="Linear trained grid test", marker="s", zorder=2)
+    plt.plot(np.mean(np.vstack(dfgrid4['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
+        dfgrid4['Validate_val']), axis=1)[beg2:end2], color="tab:red", label="Linear trained grid validate", marker="^", zorder=2)
+
     plt.ylabel("Objective value")
     plt.xlabel(r"Probability of constraint violation $(\hat{\eta})$")
     # plt.ylim([-9, 0])
@@ -265,7 +270,7 @@ if __name__ == "__main__":
     N =2000
     num_context = 20
     R = 1
-    n = 5
+    n = 10
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)
     num_reps = int(N/num_context)
