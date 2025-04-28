@@ -19,14 +19,17 @@ plt.rcParams.update({
     "font.size":18,
     "font.family": "serif"
 })
-path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/news_testing/plots/"
+path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/portfolio_exp/plots/"
 etas = [0.01,0.05,0.08,0.10,0.12,0.15,0.18,0.20,0.23,0.25]
-objs = [1,5,10]
-seeds1 = [0,1,2,3,4,5]
-seeds2 = [6,7,8,9,10,11]
-foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/multirun/2025-04-23/17-43-41/"
-foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/multirun/2025-04-23/17-44-42/"
-foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/multirun/2025-04-25/news_mv/"
+etas2 = [0.01,0.05,0.08,0.10,0.12,0.15,0.18,0.20,0.23,0.25,0.30,0.33,0.35,0.40,0.45,0.5]
+etas3 = [0.001,0.01,0.05,0.08,0.10,0.12,0.15,0.18,0.20,0.23,0.25,0.30,0.33,0.35,0.40,0.45,0.5]
+objs = [0.25,0.5,1]
+seeds1 = [0,10,20,30,40]
+seeds2 = [50,60,70,80,90]
+foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/multirun/2025-04-25/port_train/"
+foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/multirun/2025-04-26/port_mv/"
+foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/multirun/2025-04-26/port_train1/"
+foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/multirun/2025-04-27/port_train2/"
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
@@ -41,18 +44,7 @@ for eta in etas:
                 df = pd.read_csv(newfolder+"/vals.csv")
                 dfs_all[obj].append(df)
             except:
-                print(eta,obj,seed)
-            running_ind += 1
-running_ind = 0
-for eta in etas:
-    for obj in objs:
-        for seed in seeds2:
-            newfolder = foldername2+str(running_ind)
-            try:
-                df = pd.read_csv(newfolder+"/vals.csv")
-                dfs_all[obj].append(df)
-            except:
-                print(eta,obj,seed)
+                print(1,eta,obj,seed)
             running_ind += 1
 for obj in objs:
     dfs_all[obj] = pd.concat(dfs_all[obj])
@@ -69,14 +61,14 @@ for obj in objs:
     dfs[obj].to_csv(path+"gamma_"+str(obj)+"_values.csv")
 df_pre = []
 running_ind = 0
-for seed in seeds1+seeds2:
-    newfolder = foldername3+str(running_ind)
+for seed in seeds1:
+    newfolder = foldername2+str(running_ind)
     try:
         df = pd.read_csv(newfolder+"/linear_untrained_grid.csv")
         df['seed'] = seed
         df_pre.append(df)
     except:
-        print(eta,obj,seed)
+        print(2,eta,obj,seed)
     running_ind += 1
 df_pre = pd.concat(df_pre)
 dfs_pre = []
@@ -91,14 +83,14 @@ for q in quantiles:
 dfs_grid.to_csv(path+"pretrained.csv")
 df_mv = []
 running_ind = 0
-for seed in seeds1+seeds2:
-    newfolder = foldername3+str(running_ind)
+for seed in seeds1:
+    newfolder = foldername2+str(running_ind)
     try:
         df = pd.read_csv(newfolder+"/mean_var_grid.csv")
         df['seed'] = seed
         df_mv.append(df)
     except:
-        print(eta,obj,seed)
+        print(3,eta,obj,seed)
     running_ind += 1
 df_mv = pd.concat(df_mv)
 dfs_mv = []
@@ -111,12 +103,37 @@ for q in quantiles:
     quantile_values = grouped[collist_grid].quantile(q).add_prefix(str(q)+"_")
     dfs_mv_grid = pd.concat([dfs_mv_grid, quantile_values], axis=1)
 dfs_mv_grid.to_csv(path+"pretrained.csv")
+
+
+# df_trained = []
+# running_ind = 0
+# for seed in seeds1:
+#     newfolder = foldername2+str(running_ind)
+#     try:
+#         df = pd.read_csv(newfolder+"/mean_var_grid.csv")
+#         df['seed'] = seed
+#         df_mv.append(df)
+#     except:
+#         print(3,eta,obj,seed)
+#     running_ind += 1
+# df_mv = pd.concat(df_mv)
+# dfs_mv = []
+# collist_grid = ["Test_val","Avg_prob_test","Validate_val","Avg_prob_validate"]
+# grouped = df_mv.groupby(["Rho"], as_index=False)
+# mean_vals = grouped[collist_grid].mean().add_prefix("mean_")
+# dfs_mv_grid = mean_vals
+# for q in quantiles:
+#     quantile_values = grouped[collist_grid].quantile(q)
+#     quantile_values = grouped[collist_grid].quantile(q).add_prefix(str(q)+"_")
+#     dfs_mv_grid = pd.concat([dfs_mv_grid, quantile_values], axis=1)
+# dfs_mv_grid.to_csv(path+"pretrained.csv")
+
 # plt.rcParams.update({
 #     "text.usetex":True,
 #     "font.size":24,
 #     "font.family": "sans-serif"
 # })
-def plot_compare(dfs,idx,dfs_grid,dfs_mv_grid,valid,ylim=[-6,-2]):
+def plot_compare(dfs,idx,dfs_grid,dfs_mv_grid,valid,ylim=None):
     plt.figure(figsize = (8,4))
     if valid: 
 
@@ -159,27 +176,27 @@ for idx in objs:
 
 dfs_cat = []
 running_ind = 0
-for eta in etas:
+for eta in etas3:
     for obj in objs:
         for seed in seeds1:
-            newfolder = foldername1+str(running_ind)
+            newfolder = foldername4+str(running_ind)
             try:
                 df = pd.read_csv(newfolder+"/vals.csv")
                 dfs_cat.append(df)
             except:
-                print(eta,obj,seed)
+                print(4,eta,obj,seed)
             running_ind += 1
-running_ind = 0
-for eta in etas:
-    for obj in objs:
-        for seed in seeds2:
-            newfolder = foldername2+str(running_ind)
-            try:
-                df = pd.read_csv(newfolder+"/vals.csv")
-                dfs_cat.append(df)
-            except:
-                print(eta,obj,seed)
-            running_ind += 1
+# running_ind = 0
+# for eta in etas2:
+#     for obj in objs:
+#         for seed in seeds2:
+#             newfolder = foldername3+str(running_ind)
+#             try:
+#                 df = pd.read_csv(newfolder+"/vals.csv")
+#                 dfs_cat.append(df)
+#             except:
+#                 print(5,eta,obj,seed)
+#             running_ind += 1
 dfs_cat = pd.concat(dfs_cat)
 inds = {}
 #target_list = [0.01,0.05,0.1,0.15,0.20]
@@ -188,7 +205,7 @@ dfs_best = {}
 for target in target_list:
     inds[target] = []
     dfs_best[target] = []
-    for seed in seeds1+seeds2:
+    for seed in seeds1:
         try:
             best_idx = np.argmin(np.abs(np.array(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)))
             inds[target].append(best_idx)
@@ -209,7 +226,7 @@ plot_data.to_csv(path+"plot_data.csv")
 #     "font.size":24,
 #     "font.family": "sans-serif"
 # })
-def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=[-6,-2]):
+def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=None):
     idx = 1
     plt.figure(figsize = (8,4))
     plt.plot(np.array(dfs_mv_grid["mean_Avg_prob_test"]),np.array(dfs_mv_grid["mean_Test_val"]),label = "Mean-var test",marker = "^")
@@ -225,14 +242,14 @@ def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=[-6,-2]):
     plt.fill_between(np.array(dfs[idx]["mean_nonrob_prob"])[1:],np.array(dfs[idx]["0.25_nonrob_obj"])[1:],np.array(dfs[idx]["0.75_nonrob_obj"])[1:],alpha = 0.25,color = "tab:pink")
     plt.plot(np.array(dfs[idx]["mean_scenario_probs"])[1:],np.array(dfs[idx]["mean_scenario_obj"])[1:],label = "Scenario",color = "tab:purple",marker = "o")
     plt.fill_between(np.array(dfs[idx]["mean_scenario_probs"])[1:],np.array(dfs[idx]["0.25_scenario_obj"])[1:],np.array(dfs[idx]["0.75_scenario_obj"])[1:],alpha = 0.25,color = "tab:purple")
-    plt.vlines(target_list,ymin = -6,ymax=-2,linestyles=":",color = "red",alpha = 0.5)
+    plt.vlines(target_list,ymin = -0.81,ymax=-0.76,linestyles=":",color = "red",alpha = 0.5)
     # plt.vlines([0.03,0.05,0.10],ymin = -6,ymax=-2,linestyles=":",color = "red",alpha = 1)
     plt.legend(loc = "upper right")
     plt.xlabel("Probability of constraint violation")
     # plt.ylabel("Out-of-sample objective")
     plt.ylim(ylim)
     plt.tight_layout()
-    plt.xlim([-0.02,0.20])
+    # plt.xlim([-0.02,0.20])
     plt.title("Out-of-sample objectives (test set)")
-    plt.savefig(path+"Test_objectives_best_all_restricted.pdf")
+    plt.savefig(path+"Test_objectives_best_all.pdf")
 plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid)

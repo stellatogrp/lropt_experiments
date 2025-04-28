@@ -154,7 +154,6 @@ def gen_demand(sig,mu,N,seed=399):
     d_train = np.random.multivariate_normal(mu,sig, N)
     return d_train
 
-
 def trainloop(r,foldername):
     seed = r + 10
     for N in np.array([500]):
