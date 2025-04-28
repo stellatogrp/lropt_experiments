@@ -223,6 +223,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         data_df = {'seed': seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0],"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals}
         single_row_df = pd.DataFrame(data_df, index=[0])
         findfs.append(single_row_df)
+    findfs = pd.concat(findfs)
     findfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
 
     if cfg.eta == 0.20:
@@ -325,6 +326,6 @@ if __name__ == "__main__":
     for j in range(num_context):
       context_inds[j]= [i for i in train_indices if j*num_reps <= i <= (j+1)*num_reps]
       test_inds[j] = [i for i in test_valid_indices if j*num_reps <= i <= (j+1)*num_reps]
-    eps_list=np.linspace(0.001, 4, 100)
+    eps_list=np.linspace(0.001, 4, 10)
     main_func()
 
