@@ -210,6 +210,10 @@ for target in target_list:
             inds[target].append(best_idx)
             cur_df = dfs_cat[dfs_cat["seed"] == seed][abs(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)<=dif].iloc[best_idx:best_idx+1]
             dfs_best[target].append(cur_df)
+            # best_idx = np.argmin(np.abs(np.array(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)))
+            # inds[target].append(best_idx)
+            # cur_df = dfs_cat[dfs_cat["seed"] == seed].iloc[best_idx:best_idx+1]
+            # dfs_best[target].append(cur_df)
         except:
             print(seed)
     dfs_best[target] = pd.concat(dfs_best[target])   

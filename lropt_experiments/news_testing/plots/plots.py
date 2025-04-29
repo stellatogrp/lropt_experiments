@@ -185,14 +185,19 @@ inds = {}
 #target_list = [0.01,0.05,0.1,0.15,0.20]
 target_list = [0.01,0.02,0.03,0.05,0.08,0.1,0.12,0.15,0.18,0.20]
 dfs_best = {}
+dif = 0.01
 for target in target_list:
     inds[target] = []
     dfs_best[target] = []
     for seed in seeds1+seeds2:
         try:
-            best_idx = np.argmin(np.abs(np.array(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)))
+            # best_idx = np.argmin(np.abs(np.array(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)))
+            # inds[target].append(best_idx)
+            # cur_df = dfs_cat[dfs_cat["seed"] == seed].iloc[best_idx:best_idx+1]
+            # dfs_best[target].append(cur_df)
+            best_idx = np.argmin(dfs_cat[dfs_cat["seed"] == seed][abs(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)<=dif]["valid_obj"])
             inds[target].append(best_idx)
-            cur_df = dfs_cat[dfs_cat["seed"] == seed].iloc[best_idx:best_idx+1]
+            cur_df = dfs_cat[dfs_cat["seed"] == seed][abs(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)<=dif].iloc[best_idx:best_idx+1]
             dfs_best[target].append(cur_df)
         except:
             print(seed)
