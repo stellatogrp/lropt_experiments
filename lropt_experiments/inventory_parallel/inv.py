@@ -48,7 +48,7 @@ def gen_sigmu_varied(n,m,N = 500,seed = 0):
     for i in range(N):
         F = np.random.normal(size = (n,m))
         context.append(F)
-        csig = 0.2*F@(F.T)
+        csig = 0.15*F@(F.T)
         sig.append(csig)
     return np.stack(sig), np.stack(context)
 
@@ -319,7 +319,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
     except:
         return None
 
-@hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/inventory_parallel/configs",config_name = "new.yaml", version_base = None)
+@hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/inventory_parallel/configs",config_name = "inv.yaml", version_base = None)
 def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     # print(f"Current working directory: {os.getcwd()}")
@@ -339,17 +339,18 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    seed_list = [0,50,0,50,50]
+    seed_list = [0,50,0,50]
+    m_list= [4,4,8,8]
     R = 5
     initseed = seed_list[idx]
     test_p = 0.5
-    N = 2000
+    N = 500
     n = 10
-    m = 8
+    m = m_list[idx]
     np.random.seed(27)
     y_nom = np.random.uniform(2,4,n)
     y_data = y_nom
-    num_context = 20
+    num_context = 10
     num_reps = int(N/num_context)
     for scene in range(num_context-1):
         np.random.seed(scene)

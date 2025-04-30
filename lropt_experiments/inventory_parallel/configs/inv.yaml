@@ -9,28 +9,28 @@ hydra:
   sweeper:
     params:
       eta: 0.01,0.05,0.10,0.15,0.20,0.25,0.30,0.33,0.35,0.40
-      obj_scale: 0.5,1,2,5
+      obj_scale: 0.5,1,2
 eta: 0.01
 obj_scale: 1
 seed: 0
-lr: 0.01
-num_iter: 300
+lr: 0.001
+num_iter: 200
 optimizer: "SGD"
 init_rho: 1
 init_lam: 2
 init_mu: 2
 mu_multiplier: 1.02
 test_percentage: 0.5
-save_history: True
+save_history: False
 lr_step_size: 60
 lr_gamma: 0.5
 random_init: False
 parallel: False
 kappa: 0
 contextual: True
-max_iter_line_search: 150
+max_iter_line_search: 100
 line_search: True
-max_batch_size: 100
+max_batch_size: 30
 batch_percentage: 0.2
 validate_percentage: 0.2
 test_frequency: 5000

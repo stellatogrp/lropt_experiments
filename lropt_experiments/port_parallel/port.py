@@ -323,8 +323,8 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    seed_list = [0,50,0,50,50]
-    n_list = [10,15,20,10,20]
+    seed_list = [0,50,0,50]
+    n_list = [30,30,50,50]
     R = 5
     initseed = seed_list[idx]
     n = n_list[idx]
