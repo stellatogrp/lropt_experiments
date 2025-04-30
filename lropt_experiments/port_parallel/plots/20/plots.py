@@ -224,6 +224,9 @@ for target in target_list:
     plot_data.append(data)
 plot_data = pd.concat(plot_data)
 plot_data.to_csv(path+"plot_data.csv") 
+dfs_best[0.05].to_csv(path+"plot_data_005.csv") 
+dfs_best[0.1].to_csv(path+"plot_data_01.csv") 
+dfs_best[0.15].to_csv(path+"plot_data_015.csv")
 # plt.rcParams.update({
 #     "text.usetex":True,
 #     "font.size":24,

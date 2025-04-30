@@ -140,8 +140,6 @@ def plot_coverage_all(df_standard,df_reshape,dfs,title,title1,ind_1 = (0,100), i
     plt.show()
 
 
-
-
 def data_scaled(N, m, scale, seed):
     np.random.seed(seed)
     R = np.vstack([np.random.normal(
