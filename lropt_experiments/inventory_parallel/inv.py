@@ -48,7 +48,7 @@ def gen_sigmu_varied(n,m,N = 500,seed = 0):
     for i in range(N):
         F = np.random.normal(size = (n,m))
         context.append(F)
-        csig = 0.2*F@(F.T)
+        csig = 0.3*F@(F.T)
         sig.append(csig)
     return np.stack(sig), np.stack(context)
 
@@ -89,7 +89,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
             else: 
                 data_gen = True
 
-        if cfg.eta == 0.05 and cfg.obj_scale==0.5:
+        if cfg.eta == 0.10 and cfg.obj_scale==0.5:
             context_evals = 0
             context_probs = 0
             for j in range(num_context):
@@ -231,10 +231,10 @@ def inv_exp(cfg,hydra_out_dir,seed):
             b_fin = result.b
             torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_trained_linear.pth')
 
-            result_grid4 = trainer.grid(rholst=eps_list,init_A=A_fin, init_b=b_fin, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result._predictor)
-            dfgrid4 = result_grid4.df
-            dfgrid4 = dfgrid4.drop(columns=["z_vals","x_vals"])
-            dfgrid4.to_csv(hydra_out_dir+'/'+str(seed)+'_linear_trained_grid.csv')
+            # result_grid4 = trainer.grid(rholst=eps_list,init_A=A_fin, init_b=b_fin, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result._predictor)
+            # dfgrid4 = result_grid4.df
+            # dfgrid4 = dfgrid4.drop(columns=["z_vals","x_vals"])
+            # dfgrid4.to_csv(hydra_out_dir+'/'+str(seed)+'_linear_trained_grid.csv')
         except:
             print("training failed ",finseed,cfg.eta,cfg.obj_scale)
 
@@ -252,7 +252,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
         except:
             print("compare failed")
 
-        if cfg.eta == 0.05 and cfg.obj_scale==0.5:
+        if cfg.eta == 0.10 and cfg.obj_scale==0.5:
             settings.init_rho = cfg.init_rho
             settings.num_iter = 1
             settings.initialize_predictor = True
@@ -275,16 +275,17 @@ def inv_exp(cfg,hydra_out_dir,seed):
             dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_untrained_grid.csv')
             torch.save(result2._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'pretrained_linear.pth')
 
-        # try:
-        #     plot_iters(result.df,result.df_validate, steps=num_iters, title="training_"+str(cfg.eta),kappa=settings.kappa)
-        # except:
-        #     None
+        try:
+            plt.plot(result.df["Train_val"])
+            plt.savefig(hydra_out_dir+'/'+str(seed)+'_'+"iters.pdf")
+        except:
+            None
 
         beg1, end1 = 0, 100
         beg2, end2 = 0, 100
         plt.figure(figsize=(15, 4))
         
-        if cfg.eta == 0.05 and cfg.obj_scale==0.5:
+        if cfg.eta == 0.10 and cfg.obj_scale==0.5:
             plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
                 dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
             plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
@@ -341,18 +342,18 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    # seed_list = [0,0,0,0]
-    # m_list= [4,4,4,4]
-    # n_list = [10,10,10]
+    seed_list = [0,50,0,50,0,50]
+    m_list= [4,4,8,8,8,8]
+    n_list = [10,10,10,10,10,10]
+    N_list = [1000,1000,1000,1000,500,500]
     # contxtual = [T,T,F,T,T,T]
     R = 5
-    initseed = 0
-    #seed_list[idx]
+    initseed = seed_list[idx]
     test_p = 0.5
-    N = 500
-    n = 10
-    # n_list[idx]
-    m = 4
+    N = N_list[idx]
+    #1000
+    n = n_list[idx]
+    m = m_list[idx]
     #m_list[idx]
     np.random.seed(27)
     y_nom = np.random.uniform(2,4,n)
