@@ -48,7 +48,7 @@ def gen_sigmu_varied(n,m,N = 500,seed = 0):
     for i in range(N):
         F = np.random.normal(size = (n,m))
         context.append(F)
-        csig = 0.15*F@(F.T)
+        csig = 0.2*F@(F.T)
         sig.append(csig)
     return np.stack(sig), np.stack(context)
 
@@ -89,7 +89,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
             else: 
                 data_gen = True
 
-        if cfg.eta == 0.01 and cfg.obj_scale==0.5:
+        if cfg.eta == 0.05 and cfg.obj_scale==0.5:
             context_evals = 0
             context_probs = 0
             for j in range(num_context):
@@ -223,7 +223,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
         settings.validate_frequency = cfg.validate_frequency
         settings.initialize_predictor = cfg.initialize_predictor
         settings.num_iter = cfg.num_iter
-        settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200)
+        settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 100)
         try: 
             result = trainer.train(settings=settings)
             df = result.df
@@ -231,26 +231,28 @@ def inv_exp(cfg,hydra_out_dir,seed):
             b_fin = result.b
             torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_trained_linear.pth')
 
-            # result_grid4 = trainer.grid(rholst=[0.5,1,2],init_A=A_fin, init_b=b_fin, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result._predictor)
-            # dfgrid4 = result_grid4.df
-            # dfgrid4 = dfgrid4.drop(columns=["z_vals","x_vals"])
-            # dfgrid4.to_csv(hydra_out_dir+'/'+str(seed)+'_linear_trained_grid.csv')
+            result_grid4 = trainer.grid(rholst=eps_list,init_A=A_fin, init_b=b_fin, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result._predictor)
+            dfgrid4 = result_grid4.df
+            dfgrid4 = dfgrid4.drop(columns=["z_vals","x_vals"])
+            dfgrid4.to_csv(hydra_out_dir+'/'+str(seed)+'_linear_trained_grid.csv')
         except:
             print("training failed ",finseed,cfg.eta,cfg.obj_scale)
 
         try:
             findfs = []
             for rho in eps_list:
-                df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
-                data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0],"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals}
+                df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result._predictor], rho_list=[rho])
+                data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
                 single_row_df = pd.DataFrame(data_df, index=[0])
                 findfs.append(single_row_df)
+                tempdfs = pd.concat(findfs)
+                tempdfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
             findfs = pd.concat(findfs)
             findfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
         except:
-            None
+            print("compare failed")
 
-        if cfg.eta == 0.01 and cfg.obj_scale==0.5:
+        if cfg.eta == 0.05 and cfg.obj_scale==0.5:
             settings.init_rho = cfg.init_rho
             settings.num_iter = 1
             settings.initialize_predictor = True
@@ -262,7 +264,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
             dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'mean_var_grid.csv')
 
             # untrained linear
-            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200)
+            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 100)
             settings.num_iter = 1
             result2 = trainer.train(settings=settings)
             A_fin2 = result2.A
@@ -282,7 +284,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
         beg2, end2 = 0, 100
         plt.figure(figsize=(15, 4))
         
-        if cfg.eta == 0.01 and cfg.obj_scale==0.5:
+        if cfg.eta == 0.05 and cfg.obj_scale==0.5:
             plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
                 dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
             plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
@@ -339,14 +341,19 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    seed_list = [0,50,0,50]
-    m_list= [4,4,8,8]
+    # seed_list = [0,0,0,0]
+    # m_list= [4,4,4,4]
+    # n_list = [10,10,10]
+    # contxtual = [T,T,F,T,T,T]
     R = 5
-    initseed = seed_list[idx]
+    initseed = 0
+    #seed_list[idx]
     test_p = 0.5
     N = 500
     n = 10
-    m = m_list[idx]
+    # n_list[idx]
+    m = 4
+    #m_list[idx]
     np.random.seed(27)
     y_nom = np.random.uniform(2,4,n)
     y_data = y_nom
@@ -374,6 +381,6 @@ if __name__ == "__main__":
     for j in range(num_context):
         context_inds[j]= [i for i in train_indices if j*num_reps <= i <= (j+1)*num_reps]
         test_inds[j] = [i for i in test_valid_indices if j*num_reps <= i <= (j+1)*num_reps]
-    eps_list=np.linspace(0.5, 3, 50)
+    eps_list=np.linspace(1, 4, 50)
     main_func()
 

@@ -246,7 +246,8 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
 
 
             # untrained linear
-            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200)
+            # settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200)
+            settings.predictor = lropt.CovPredictor()
             settings.num_iter = 1
             result2 = trainer.train(settings=settings)
             A_fin2 = result2.A
@@ -254,7 +255,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             result_grid3 = trainer.grid(rholst=eps_list,init_A=A_fin2, init_b=b_fin2, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result2._predictor)
             dfgrid3 = result_grid3.df
             dfgrid3 = dfgrid3.drop(columns=["z_vals","x_vals"])
-            dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_untrained_grid.csv')
+            dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_cov_pretrained_grid.csv')
             torch.save(result2._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'pretrained_linear.pth')
 
         try:

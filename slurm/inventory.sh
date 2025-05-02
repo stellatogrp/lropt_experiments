@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=portfoliotest
+#SBATCH --job-name=invtest
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=35
-#SBATCH --mem-per-cpu=8G
-#SBATCH --time=23:00:00
+#SBATCH --cpus-per-task=15
+#SBATCH --mem-per-cpu=20G
+#SBATCH --time=15:00:00
 #SBATCH -o /scratch/gpfs/iywang/lropt_revision/output/inventory/inv_test_%A_.txt
 #SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT
 #SBATCH --mail-user=iabirina@hotmail.com
