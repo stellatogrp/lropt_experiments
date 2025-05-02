@@ -257,5 +257,5 @@ def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=None):
     plt.tight_layout()
     # plt.xlim([-0.02,0.20])
     plt.title("Out-of-sample objectives (test set)")
-    plt.savefig(path+"Test_objectives_best_all.pdf")
+    plt.savefig(path+"Test_objectives_best_all.pdf",bbox_inches='tight')
 plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid)

@@ -19,14 +19,14 @@ plt.rcParams.update({
     "font.size":18,
     "font.family": "serif"
 })
-path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/news_testing/plots/"
-etas = [0.01,0.05,0.08,0.10,0.12,0.15,0.18,0.20,0.23,0.25]
-objs = [1,5,10]
-seeds1 = [0,1,2,3,4,5]
-seeds2 = [6,7,8,9,10,11]
-foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/multirun/2025-04-23/17-43-41/"
-foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/multirun/2025-04-23/17-44-42/"
-foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/multirun/2025-04-25/news_mv/"
+path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/port_parallel/plots/30/"
+R = 5
+etas = [0.01,0.05,0.10,0.15,0.18,0.20,0.23,0.25,0.30,0.33,0.35,0.40,0.45]
+objs = [ 0.5,0.75,1,1.2,1.5]
+seeds1 = [0,10,20,30,40]
+seeds2 = [50,60,70,80,90]
+foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-04-28/30_s0/"
+foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-04-28/30_s1/"
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
@@ -35,25 +35,25 @@ for obj in objs:
     dfs_all[obj] = []
 for eta in etas:
     for obj in objs:
-        for seed in seeds1:
-            newfolder = foldername1+str(running_ind)
+        newfolder = foldername1+str(running_ind)
+        for seed in range(R):
             try:
-                df = pd.read_csv(newfolder+"/vals.csv")
+                df = pd.read_csv(newfolder+'/'+str(seed)+"_vals.csv")
                 dfs_all[obj].append(df)
             except:
-                print(eta,obj,seed)
-            running_ind += 1
+                print(1,eta,obj,seed)
+        running_ind += 1
 running_ind = 0
 for eta in etas:
     for obj in objs:
-        for seed in seeds2:
-            newfolder = foldername2+str(running_ind)
+        newfolder = foldername2+str(running_ind)
+        for seed in range(R):
             try:
-                df = pd.read_csv(newfolder+"/vals.csv")
+                df = pd.read_csv(newfolder+'/'+str(seed)+"_vals.csv")
                 dfs_all[obj].append(df)
             except:
-                print(eta,obj,seed)
-            running_ind += 1
+                print(1,eta,obj,seed)
+        running_ind += 1
 for obj in objs:
     dfs_all[obj] = pd.concat(dfs_all[obj])
 collist = list(dfs_all[obj].columns)[5:]
@@ -68,16 +68,23 @@ for obj in objs:
         dfs[obj] = pd.concat([dfs[obj], quantile_values], axis=1)
     dfs[obj].to_csv(path+"gamma_"+str(obj)+"_values.csv")
 df_pre = []
-running_ind = 0
-for seed in seeds1+seeds2:
-    newfolder = foldername3+str(running_ind)
+running_ind = 25
+newfolder = foldername1+str(running_ind)
+for seed in range(R):
     try:
-        df = pd.read_csv(newfolder+"/linear_untrained_grid.csv")
-        df['seed'] = seed
+        df = pd.read_csv(newfolder+'/'+str(seed)+"_linear_untrained_grid.csv")
+        df['seed'] = seeds1[seed]
         df_pre.append(df)
     except:
-        print(eta,obj,seed)
-    running_ind += 1
+        print(2,eta,obj,seed)
+newfolder = foldername2+str(running_ind)
+for seed in range(R):
+    try:
+        df = pd.read_csv(newfolder+'/'+str(seed)+"_linear_untrained_grid.csv")
+        df['seed'] = seeds2[seed]
+        df_pre.append(df)
+    except:
+        print(2,eta,obj,seed)
 df_pre = pd.concat(df_pre)
 dfs_pre = []
 collist_grid = ["Test_val","Avg_prob_test","Validate_val","Avg_prob_validate"]
@@ -90,16 +97,23 @@ for q in quantiles:
     dfs_grid = pd.concat([dfs_grid, quantile_values], axis=1)
 dfs_grid.to_csv(path+"pretrained.csv")
 df_mv = []
-running_ind = 0
-for seed in seeds1+seeds2:
-    newfolder = foldername3+str(running_ind)
+running_ind = 25
+newfolder = foldername1+str(running_ind)
+for seed in range(R):
     try:
-        df = pd.read_csv(newfolder+"/mean_var_grid.csv")
-        df['seed'] = seed
+        df = pd.read_csv(newfolder+'/'+str(seed)+"_mean_var_grid.csv")
+        df['seed'] = seeds1[seed]
         df_mv.append(df)
     except:
-        print(eta,obj,seed)
-    running_ind += 1
+        print(3,eta,obj,seed)
+newfolder = foldername2+str(running_ind)
+for seed in range(R):
+    try:
+        df = pd.read_csv(newfolder+'/'+str(seed)+"_mean_var_grid.csv")
+        df['seed'] = seeds2[seed]
+        df_mv.append(df)
+    except:
+        print(3,eta,obj,seed)
 df_mv = pd.concat(df_mv)
 dfs_mv = []
 collist_grid = ["Test_val","Avg_prob_test","Validate_val","Avg_prob_validate"]
@@ -111,12 +125,13 @@ for q in quantiles:
     quantile_values = grouped[collist_grid].quantile(q).add_prefix(str(q)+"_")
     dfs_mv_grid = pd.concat([dfs_mv_grid, quantile_values], axis=1)
 dfs_mv_grid.to_csv(path+"pretrained.csv")
+
 # plt.rcParams.update({
 #     "text.usetex":True,
 #     "font.size":24,
 #     "font.family": "sans-serif"
 # })
-def plot_compare(dfs,idx,dfs_grid,dfs_mv_grid,valid,ylim=[-6,-2]):
+def plot_compare(dfs,idx,dfs_grid,dfs_mv_grid,valid,ylim=None):
     plt.figure(figsize = (8,4))
     if valid: 
 
@@ -161,31 +176,31 @@ dfs_cat = []
 running_ind = 0
 for eta in etas:
     for obj in objs:
-        for seed in seeds1:
-            newfolder = foldername1+str(running_ind)
+        newfolder = foldername1+str(running_ind)
+        for seed in range(5):
             try:
-                df = pd.read_csv(newfolder+"/vals.csv")
+                df = pd.read_csv(newfolder+'/'+str(seed)+"_vals.csv")
                 dfs_cat.append(df)
             except:
-                print(eta,obj,seed)
-            running_ind += 1
+                print(4,eta,obj,seed)
+        running_ind += 1
 running_ind = 0
 for eta in etas:
     for obj in objs:
-        for seed in seeds2:
-            newfolder = foldername2+str(running_ind)
+        newfolder = foldername2+str(running_ind)
+        for seed in range(5):
             try:
-                df = pd.read_csv(newfolder+"/vals.csv")
+                df = pd.read_csv(newfolder+'/'+str(seed)+"_vals.csv")
                 dfs_cat.append(df)
             except:
-                print(eta,obj,seed)
-            running_ind += 1
+                print(4,eta,obj,seed)
+        running_ind += 1
 dfs_cat = pd.concat(dfs_cat)
 inds = {}
 #target_list = [0.01,0.05,0.1,0.15,0.20]
 target_list = [0.01,0.02,0.03,0.05,0.08,0.1,0.12,0.15,0.18,0.20]
 dfs_best = {}
-dif = 0.005
+dif=0.01
 curdif = dif
 for target in target_list:
     inds[target] = []
@@ -196,14 +211,15 @@ for target in target_list:
             mindif = np.min(abs(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target))
             if mindif >= dif:
                 curdif = mindif
+                print(curdif)
+            best_idx = np.argmin(dfs_cat[dfs_cat["seed"] == seed][abs(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)<=curdif]["valid_obj"])
+            inds[target].append(best_idx)
+            cur_df = dfs_cat[dfs_cat["seed"] == seed][abs(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            dfs_best[target].append(cur_df)
             # best_idx = np.argmin(np.abs(np.array(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)))
             # inds[target].append(best_idx)
             # cur_df = dfs_cat[dfs_cat["seed"] == seed].iloc[best_idx:best_idx+1]
             # dfs_best[target].append(cur_df)
-            best_idx = np.argmin(dfs_cat[dfs_cat["seed"] == seed][abs(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)<=mindif]["valid_obj"])
-            inds[target].append(best_idx)
-            cur_df = dfs_cat[dfs_cat["seed"] == seed][abs(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)<=mindif].iloc[best_idx:best_idx+1]
-            dfs_best[target].append(cur_df)
         except:
             print(seed)
     dfs_best[target] = pd.concat(dfs_best[target])   
@@ -232,7 +248,7 @@ for target in target_list:
             if mindif >= dif:
                 curdif = mindif
             best_idx = np.argmin(df_pre[df_pre["seed"] == seed][abs(df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target)<=curdif]["Validate_val"])
-            cur_df = df_pre[df_pre["seed"] == seed][abs(df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            cur_df = df_pre[df_pre["seed"] == seed][abs(df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target)<=dif].iloc[best_idx:best_idx+1]
             dfs_best_pre[target].append(cur_df)
         except:
             print(seed)
@@ -244,17 +260,17 @@ for target in target_list:
     plot_data.append(data)
 plot_data = pd.concat(plot_data)
 plot_data.to_csv(path+"plot_data.csv") 
+dfs_best[0.05].to_csv(path+"plot_data_005.csv") 
+dfs_best[0.1].to_csv(path+"plot_data_01.csv") 
+dfs_best[0.15].to_csv(path+"plot_data_015.csv")
 # plt.rcParams.update({
 #     "text.usetex":True,
 #     "font.size":24,
 #     "font.family": "sans-serif"
 # })
-def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=[-6,-2]):
+def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=None):
     idx = 1
     plt.figure(figsize = (8,4))
-    # plt.plot(np.array(dfs_mv_grid["mean_Avg_prob_test"]),np.array(dfs_mv_grid["mean_Test_val"]),label = "Mean-var test",marker = "^")
-    # plt.fill_between(np.array(dfs_mv_grid["0.25_Avg_prob_test"]),np.array(dfs_mv_grid["0.25_Test_val"]),np.array(dfs_mv_grid["0.75_Test_val"]),alpha = 0.25)
-    
     plt.plot(np.array(plot_data["mv_prob"]),np.array(plot_data["mv_obj"]), label = "MV test" ,color = "tab:blue",marker = "^")
     plt.fill_between(np.array(plot_data["mv_prob"]),np.array(plot_data["0.25_mv_obj"]),np.array(plot_data["0.75_mv_obj"]),alpha = 0.25, color = "tab:blue")
     
@@ -264,21 +280,19 @@ def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=[-6,-2]):
     plt.plot(np.array(plot_data["pre_prob"]),np.array(plot_data["pre_obj"]), label = "Pretrained test" ,color = "tab:green",marker = "v")
     plt.fill_between(np.array(plot_data["pre_prob"]),np.array(plot_data["0.25_pre_obj"]),np.array(plot_data["0.75_pre_obj"]),alpha = 0.25, color = "tab:green")
 
-    # plt.plot(np.array(dfs_grid["mean_Avg_prob_test"]),np.array(dfs_grid["mean_Test_val"]),label = "Pre-trained test",marker = "v",color = "tab:green")
-    # plt.fill_between(np.array(dfs_grid["0.25_Avg_prob_validate"]),np.array(dfs_grid["0.25_Test_val"]),np.array(dfs_grid["0.75_Test_val"]),alpha = 0.25,color = "tab:green")
         
     plt.plot(np.array(dfs[idx]["mean_nonrob_prob"])[1:],np.array(dfs[idx]["mean_nonrob_obj"])[1:],label = "Non-robust",color = "tab:pink",marker = "s")
     plt.fill_between(np.array(dfs[idx]["mean_nonrob_prob"])[1:],np.array(dfs[idx]["0.25_nonrob_obj"])[1:],np.array(dfs[idx]["0.75_nonrob_obj"])[1:],alpha = 0.25,color = "tab:pink")
     plt.plot(np.array(dfs[idx]["mean_scenario_probs"])[1:],np.array(dfs[idx]["mean_scenario_obj"])[1:],label = "Scenario",color = "tab:purple",marker = "o")
     plt.fill_between(np.array(dfs[idx]["mean_scenario_probs"])[1:],np.array(dfs[idx]["0.25_scenario_obj"])[1:],np.array(dfs[idx]["0.75_scenario_obj"])[1:],alpha = 0.25,color = "tab:purple")
-    plt.vlines(target_list,ymin = -6,ymax=-2,linestyles=":",color = "red",alpha = 0.5)
+    plt.vlines(target_list,ymin = -0.92,ymax=-0.8,linestyles=":",color = "red",alpha = 0.5)
     # plt.vlines([0.03,0.05,0.10],ymin = -6,ymax=-2,linestyles=":",color = "red",alpha = 1)
     plt.legend(loc = "upper right")
     plt.xlabel("Probability of constraint violation")
     # plt.ylabel("Out-of-sample objective")
     plt.ylim(ylim)
     plt.tight_layout()
-    plt.xlim([-0.02,0.20])
+    # plt.xlim([-0.02,0.20])
     plt.title("Out-of-sample objectives (test set)")
-    plt.savefig(path+"Test_objectives_best_all_restricted.pdf")
+    plt.savefig(path+"Test_objectives_best_all_new.pdf",bbox_inches='tight')
 plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid)
