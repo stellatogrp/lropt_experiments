@@ -50,7 +50,7 @@ def gen_sigmu_varied(n,N = 500,seed = 0):
     for i in range(N):
         F = np.random.normal(size = (n,2))
         context.append(F)
-        csig = 0.1*F@(F.T)
+        csig = 0.2*F@(F.T)
         sig.append(csig)
         mu.append(np.random.uniform(0.5,1,n))
     return np.stack(sig), np.vstack(mu), np.stack(context), origmu
@@ -59,7 +59,7 @@ def gen_demand_varied(sig,mu,orig_mu,N,seed=399):
     pointlist = []
     np.random.seed(seed)
     for i in range(N):
-        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i])
+        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0.1*np.eye(orig_mu.shape[0]))
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
@@ -82,52 +82,57 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             try: 
                 data = gen_demand_varied(sig,mu,orig_mu,N,seed=seed)
                 train = data[train_indices]
-                init = sc.linalg.sqrtm(np.cov(train.T)+0.001*np.eye(n))
+                init = sc.linalg.sqrtm(np.cov(train.T))
                 init_bval = np.mean(train, axis=0)
             except Exception as e:
                 finseed += 1
             else: 
                 data_gen = True
 
-        context_evals = 0
-        context_probs = 0
-        for j in range(num_context):
-            u = lropt.UncertainParameter(n,
-                                    uncertainty_set=lropt.Scenario(
-                                                                data=data[context_inds[j]]))
-            # Formulate the Robust Problem
-            x_s = cp.Variable(n)
-            t_s = cp.Variable()
+        if cfg.eta == 0.01 and cfg.obj_scale==0.5:
+            context_evals = 0
+            context_probs = 0
+            for j in range(num_context):
+                u = lropt.UncertainParameter(n,
+                                        uncertainty_set=lropt.Scenario(
+                                                                    data=data[context_inds[j]]))
+                # Formulate the Robust Problem
+                x_s = cp.Variable(n)
+                t_s = cp.Variable()
 
-            objective = cp.Minimize(t_s)
-            constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
-            prob_context = lropt.RobustProblem(objective, constraints)
-            prob_context.solve()
-            eval, prob_vio = calc_eval(x_s.value, t_s.value,data[test_inds[j]])
-            context_evals += eval
-            context_probs += prob_vio
-        context_evals = context_evals/num_context
-        context_probs = context_probs/num_context
+                objective = cp.Minimize(t_s)
+                constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
+                prob_context = lropt.RobustProblem(objective, constraints)
+                prob_context.solve()
+                eval, prob_vio = calc_eval(x_s.value, t_s.value,data[test_inds[j]])
+                context_evals += eval
+                context_probs += prob_vio
+            context_evals = context_evals/num_context
+            context_probs = context_probs/num_context
 
-        nonrob_evals = 0
-        nonrob_probs = 0
-        for j in range(num_context):
-            u = lropt.UncertainParameter(n,
-                                    uncertainty_set=lropt.Scenario(
-                                                                data=np.mean(data[context_inds[j]],axis=0).reshape(1,n)))
-            # Formulate the Robust Problem
-            x_s = cp.Variable(n)
-            t_s = cp.Variable()
+            nonrob_evals = 0
+            nonrob_probs = 0
+            for j in range(num_context):
+                u = lropt.UncertainParameter(n,
+                                        uncertainty_set=lropt.Scenario(
+                                                                    data=np.mean(data[context_inds[j]],axis=0).reshape(1,n)))
+                # Formulate the Robust Problem
+                x_s = cp.Variable(n)
+                t_s = cp.Variable()
 
-            objective = cp.Minimize(t_s)
-            constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
-            prob_nonrob = lropt.RobustProblem(objective, constraints)
-            prob_nonrob.solve()
-            eval, prob_vio = calc_eval(x_s.value, t_s.value,data[test_inds[j]])
-            nonrob_evals += eval
-            nonrob_probs += prob_vio
-        nonrob_evals = nonrob_evals / (num_context)
-        nonrob_probs = nonrob_probs / (num_context)
+                objective = cp.Minimize(t_s)
+                constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
+                prob_nonrob = lropt.RobustProblem(objective, constraints)
+                prob_nonrob.solve()
+                eval, prob_vio = calc_eval(x_s.value, t_s.value,data[test_inds[j]])
+                nonrob_evals += eval
+                nonrob_probs += prob_vio
+            nonrob_evals = nonrob_evals / (num_context)
+            nonrob_probs = nonrob_probs / (num_context)
+
+            data_df = {'seed': initseed+10*seed, "a_seed":finseed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals}
+            single_row_df = pd.DataFrame(data_df, index=[0])
+            single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals_nonrob.csv",index=False)
 
 
         u = lropt.UncertainParameter(n,
@@ -223,9 +228,9 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             plt.savefig(hydra_out_dir+'/'+str(seed)+'_'+title+"_iters.pdf", bbox_inches='tight')
         try:
             findfs = []
-            for rho in eps_list:
+            for rho in eps_list_train:
                 df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
-                data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0],"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals}
+                data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
                 single_row_df = pd.DataFrame(data_df, index=[0])
                 findfs.append(single_row_df)
             findfs = pd.concat(findfs)
@@ -233,7 +238,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         except:
             None
 
-        if cfg.eta == 0.20 and cfg.obj_scale == 0.5:
+        if cfg.eta == 0.01 and cfg.obj_scale == 0.5:
             settings.init_rho = cfg.init_rho
             settings.num_iter = 1
             settings.initialize_predictor = True
@@ -246,7 +251,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
 
 
             # untrained linear
-            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200)
+            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = 75)
             # settings.predictor = lropt.CovPredictor()
             settings.num_iter = 1
             result2 = trainer.train(settings=settings)
@@ -255,8 +260,20 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             result_grid3 = trainer.grid(rholst=eps_list,init_A=A_fin2, init_b=b_fin2, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result2._predictor)
             dfgrid3 = result_grid3.df
             dfgrid3 = dfgrid3.drop(columns=["z_vals","x_vals"])
-            dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_cov_pretrained_grid.csv')
+            dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_pretrained_grid.csv')
             torch.save(result2._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'pretrained_linear.pth')
+
+            # untrained covpred
+            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 100,knn_cov = True, n_neighbors=50,knn_scale = 1)
+            settings.num_iter = 1
+            resultcov = trainer.train(settings=settings)
+            A_fincov = resultcov.A
+            b_fincov = resultcov.b
+            result_grid5 = trainer.grid(rholst=eps_list_train,init_A=A_fincov, init_b=b_fincov, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = resultcov._predictor)
+            dfgrid5 = result_grid5.df
+            dfgrid5 = dfgrid5.drop(columns=["z_vals","x_vals"])
+            dfgrid5.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_cov_pretrained_grid.csv')
+            torch.save(resultcov._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'pretrained_linear_cov.pth')
 
         try:
             plot_iters(result.df,result.df_validate, steps=num_iters, title="training_"+str(cfg.eta),kappa=settings.kappa)
@@ -267,7 +284,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         beg2, end2 = 0, 100
         plt.figure(figsize=(15, 4))
         
-        if cfg.eta == 0.20 and cfg.obj_scale == 0.5:
+        if cfg.eta == 0.01 and cfg.obj_scale == 0.5:
             plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
                 dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
             plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
@@ -324,9 +341,9 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    seed_list = [100,150]
-    n_list = [30,30]
-    R = 5
+    seed_list = [0]
+    n_list = [30]
+    R = 10
     initseed = seed_list[idx]
     n = n_list[idx]
     N = 2000
@@ -345,8 +362,9 @@ if __name__ == "__main__":
     context_inds = {}
     test_inds = {}
     for j in range(num_context):
-      context_inds[j]= [i for i in train_indices if j*num_reps <= i <= (j+1)*num_reps]
-      test_inds[j] = [i for i in test_valid_indices if j*num_reps <= i <= (j+1)*num_reps]
+      context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
+      test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
     eps_list=np.linspace(0.5, 3, 60)
+    eps_list_train = np.linspace(0.5, 10, 120)
     main_func()
 

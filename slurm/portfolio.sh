@@ -2,13 +2,13 @@
 #SBATCH --job-name=portfoliotest
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=10
+#SBATCH --cpus-per-task=18
 #SBATCH --mem-per-cpu=8G
-#SBATCH --time=15:00:00
+#SBATCH --time=23:00:00
 #SBATCH -o /scratch/gpfs/iywang/lropt_revision/output/portfolio/portfolio_test_%A_.txt
 #SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT
 #SBATCH --mail-user=iabirina@hotmail.com
-#SBATCH --array=1        # job array
+#SBATCH --array=0        # job array
 
 module purge
 module load anaconda3/2023.9

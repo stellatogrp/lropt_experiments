@@ -56,7 +56,7 @@ def gen_demand_varied(sig,mu,d,N,seed=399):
     pointlist = []
     np.random.seed(seed)
     for i in range(N):
-        d_train = np.random.multivariate_normal(d - 0.1*mu[i],sig[i])
+        d_train = np.random.multivariate_normal(d - 0.1*mu[i],sig[i]+0.1*np.eye(d.shape[0]))
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
@@ -82,7 +82,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
             try: 
                 data = gen_demand_varied(sig,y_data,d,N,seed=finseed)
                 train = data[train_indices]
-                init = sc.linalg.sqrtm(np.cov(train.T)+0.001*np.eye(n))
+                init = sc.linalg.sqrtm(np.cov(train.T)+0.00001*np.eye(n))
                 init_bval = np.mean(train, axis=0)
             except Exception as e:
                 finseed += 1
@@ -240,7 +240,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
 
         try:
             findfs = []
-            for rho in eps_list:
+            for rho in _train:
                 df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result._predictor], rho_list=[rho])
                 data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
                 single_row_df = pd.DataFrame(data_df, index=[0])
@@ -256,7 +256,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
             settings.init_rho = cfg.init_rho
             settings.num_iter = 1
             settings.initialize_predictor = True
-            result_grid = trainer.grid(rholst=eps_list, init_A=init,
+            result_grid = trainer.grid(rholst=eps_list_train, init_A=init,
                                 init_b=init_bval, seed=5,
                                 init_alpha=0., test_percentage=test_p, quantiles = (0.3, 0.7))
             dfgrid = result_grid.df
@@ -264,7 +264,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
             dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'mean_var_grid.csv')
 
             # untrained linear
-            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 100)
+            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 100,knn_cov=True,n_neighbors=15)
             settings.num_iter = 1
             result2 = trainer.train(settings=settings)
             A_fin2 = result2.A
@@ -342,10 +342,10 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    seed_list = [100,150,0,50,0,50]
-    m_list= [4,4,8,8,8,8]
-    n_list = [10,10,10,10,10,10]
-    N_list = [1000,1000,1000,1000,500,500]
+    seed_list = [0,0]
+    m_list= [4,4]
+    n_list = [10,10]
+    N_list = [1000,500]
     # contxtual = [T,T,F,T,T,T]
     R = 5
     initseed = seed_list[idx]
@@ -380,8 +380,9 @@ if __name__ == "__main__":
     context_inds = {}
     test_inds = {}
     for j in range(num_context):
-        context_inds[j]= [i for i in train_indices if j*num_reps <= i <= (j+1)*num_reps]
-        test_inds[j] = [i for i in test_valid_indices if j*num_reps <= i <= (j+1)*num_reps]
+        context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
+        test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
     eps_list=np.linspace(1, 4, 50)
+    eps_list_train = np.linspace(1, 9, 90)
     main_func()
 
