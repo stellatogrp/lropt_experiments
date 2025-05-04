@@ -4,7 +4,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=10
 #SBATCH --mem-per-cpu=8G
-#SBATCH --time=8:00:00
+#SBATCH --time=15:00:00
 #SBATCH -o /scratch/gpfs/iywang/lropt_revision/output/portfolio/portfolio_test_%A_.txt
 #SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT
 #SBATCH --mail-user=iabirina@hotmail.com

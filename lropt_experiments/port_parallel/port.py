@@ -233,7 +233,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         except:
             None
 
-        if cfg.eta == 0.20:
+        if cfg.eta == 0.20 and cfg.obj_scale == 0.5:
             settings.init_rho = cfg.init_rho
             settings.num_iter = 1
             settings.initialize_predictor = True
@@ -246,8 +246,8 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
 
 
             # untrained linear
-            # settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200)
-            settings.predictor = lropt.CovPredictor()
+            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200)
+            # settings.predictor = lropt.CovPredictor()
             settings.num_iter = 1
             result2 = trainer.train(settings=settings)
             A_fin2 = result2.A
@@ -267,7 +267,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         beg2, end2 = 0, 100
         plt.figure(figsize=(15, 4))
         
-        if cfg.eta == 0.20:
+        if cfg.eta == 0.20 and cfg.obj_scale == 0.5:
             plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
                 dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
             plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
@@ -324,8 +324,8 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    seed_list = [0,50,0,50]
-    n_list = [30,30,50,50]
+    seed_list = [100,150]
+    n_list = [30,30]
     R = 5
     initseed = seed_list[idx]
     n = n_list[idx]

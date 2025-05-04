@@ -342,7 +342,7 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    seed_list = [0,50,0,50,0,50]
+    seed_list = [100,150,0,50,0,50]
     m_list= [4,4,8,8,8,8]
     n_list = [10,10,10,10,10,10]
     N_list = [1000,1000,1000,1000,500,500]

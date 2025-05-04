@@ -38,10 +38,10 @@ validate_frequency: 2000
 initialize_predictor: True
 serial: False
 n_val: 10
-m_val: 8
+m_val: 4
 sigmult: 0.3
 epsrange: 1450
 gridalso: False
 pretrain: True
-initseedval: 050
+initseedval: 10050
 Nval: 1000
