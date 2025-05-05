@@ -44,8 +44,8 @@ epsrange: 1450
 gridalso: False
 pretrain: True
 initseedval: 0
-Nval: 500
-epslimtrain: 1450
+Nval: 1000
+epslimtrain: 1990
 addval: 0
 Rvals: 5
 knnvals: 15

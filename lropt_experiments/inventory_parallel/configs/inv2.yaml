@@ -8,7 +8,7 @@ hydra:
   mode: MULTIRUN
   sweeper:
     params:
-      eta: 0.10,0.15,0.20,0.25,0.30,0.33,0.35,0.40,0.50
+      eta: 0.10,0.20,0.25,0.30,0.33,0.35,0.40,0.50
       obj_scale: 0.5,1,2 
 eta: 0.01
 obj_scale: 1
@@ -28,7 +28,7 @@ random_init: False
 parallel: False
 kappa: 0
 contextual: True
-max_iter_line_search: 100
+max_iter_line_search: 50
 line_search: True
 max_batch_size: 30
 batch_percentage: 0.2
@@ -37,11 +37,15 @@ test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
 serial: False
-n_val: 20
+n_val: 10
 m_val: 4
 sigmult: 0.3
 epsrange: 1450
 gridalso: False
 pretrain: True
-initseedval: 050
+initseedval: 0
 Nval: 1000
+epslimtrain: 1990
+addval: 0.1
+Rvals: 5
+knnvals: 15

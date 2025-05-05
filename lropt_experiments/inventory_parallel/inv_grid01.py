@@ -56,7 +56,7 @@ def gen_demand_varied(sig,mu,d,N,seed=399):
     pointlist = []
     np.random.seed(seed)
     for i in range(N):
-        d_train = np.random.multivariate_normal(d - 0.1*mu[i],sig[i]+0.0*np.eye(d.shape[0]))
+        d_train = np.random.multivariate_normal(d - 0.1*mu[i],sig[i]+0.1*np.eye(d.shape[0]))
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
@@ -223,13 +223,17 @@ def inv_exp(cfg,hydra_out_dir,seed):
         settings.validate_frequency = cfg.validate_frequency
         settings.initialize_predictor = cfg.initialize_predictor
         settings.num_iter = cfg.num_iter
-        settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 100)
+        settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 100)
         try: 
+            settings.num_iter = 1
             result = trainer.train(settings=settings)
             df = result.df
             A_fin = result.A
             b_fin = result.b
-            torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_trained_linear.pth')
+            # torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_trained_linear.pth')
+            dir = '/scratch/gpfs/iywang/lropt_revision/lropt_experiments/inv_results/2025-05-04/3/'+hydra_out_dir[-1]
+
+            settings.predictor.load_state_dict(torch.load(dir+'/'+str(seed)+'_trained_linear.pth'))
 
             # result_grid4 = trainer.grid(rholst=eps_list,init_A=A_fin, init_b=b_fin, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result._predictor)
             # dfgrid4 = result_grid4.df
@@ -240,8 +244,8 @@ def inv_exp(cfg,hydra_out_dir,seed):
 
         try:
             findfs = []
-            for rho in eps_list:
-                df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result._predictor], rho_list=[rho])
+            for rho in eps_list_train:
+                df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [settings.predictor], rho_list=[rho])
                 data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
                 single_row_df = pd.DataFrame(data_df, index=[0])
                 findfs.append(single_row_df)
