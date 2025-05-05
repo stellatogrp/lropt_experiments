@@ -251,7 +251,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
 
 
             # untrained linear
-            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = 90)
+            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = 30)
             # settings.predictor = lropt.CovPredictor()
             settings.num_iter = 1
             result2 = trainer.train(settings=settings)
