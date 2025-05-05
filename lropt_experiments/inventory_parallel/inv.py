@@ -256,7 +256,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
             settings.init_rho = cfg.init_rho
             settings.num_iter = 1
             settings.initialize_predictor = True
-            result_grid = trainer.grid(rholst=eps_list_train, init_A=init,
+            result_grid = trainer.grid(rholst=eps_list, init_A=init,
                                 init_b=init_bval, seed=5,
                                 init_alpha=0., test_percentage=test_p, quantiles = (0.3, 0.7))
             dfgrid = result_grid.df
@@ -264,12 +264,12 @@ def inv_exp(cfg,hydra_out_dir,seed):
             dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'mean_var_grid.csv')
 
             # untrained linear
-            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 100,knn_cov=True,n_neighbors=15)
+            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 100,knn_cov=True,n_neighbors=45)
             settings.num_iter = 1
             result2 = trainer.train(settings=settings)
             A_fin2 = result2.A
             b_fin2 = result2.b
-            result_grid3 = trainer.grid(rholst=eps_list,init_A=A_fin2, init_b=b_fin2, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result2._predictor)
+            result_grid3 = trainer.grid(rholst=eps_list_train,init_A=A_fin2, init_b=b_fin2, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result2._predictor)
             dfgrid3 = result_grid3.df
             dfgrid3 = dfgrid3.drop(columns=["z_vals","x_vals"])
             dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_untrained_grid.csv')
