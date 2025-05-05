@@ -41,8 +41,8 @@ initialize_predictor: True
 nval: 30
 Rval: 10
 seedvals: 0
-knnnum: 30
+knnnum: 60
 epslim: 0.50360
 epslimtrain: 0.510120
-addval: 0.1
-Fmults: 0.2
+addval: 0
+Fmults: 0.1
