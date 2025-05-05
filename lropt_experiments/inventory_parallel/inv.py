@@ -240,7 +240,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
 
         try:
             findfs = []
-            for rho in _train:
+            for rho in eps_list_train:
                 df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result._predictor], rho_list=[rho])
                 data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
                 single_row_df = pd.DataFrame(data_df, index=[0])
