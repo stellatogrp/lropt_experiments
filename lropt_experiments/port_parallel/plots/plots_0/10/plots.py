@@ -19,14 +19,14 @@ plt.rcParams.update({
     "font.size":18,
     "font.family": "serif"
 })
-path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/port_parallel/plots/15/"
+path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/port_parallel/plots/plots_0/10/"
 R = 5
 etas = [0.01,0.05,0.08,0.10,0.12,0.15,0.18,0.20,0.23,0.25,0.30,0.33,0.35,0.40]
 objs = [0.25,0.5,1]
 seeds1 = [0,10,20,30,40]
 seeds2 = [50,60,70,80,90]
-foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-04-28/15_s0/"
-foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-04-28/15_s1/"
+foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-04-28/10_s0/"
+foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-04-28/10_s1/"
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
@@ -241,7 +241,7 @@ def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=None):
     plt.fill_between(np.array(dfs[idx]["mean_nonrob_prob"])[1:],np.array(dfs[idx]["0.25_nonrob_obj"])[1:],np.array(dfs[idx]["0.75_nonrob_obj"])[1:],alpha = 0.25,color = "tab:pink")
     plt.plot(np.array(dfs[idx]["mean_scenario_probs"])[1:],np.array(dfs[idx]["mean_scenario_obj"])[1:],label = "Scenario",color = "tab:purple",marker = "o")
     plt.fill_between(np.array(dfs[idx]["mean_scenario_probs"])[1:],np.array(dfs[idx]["0.25_scenario_obj"])[1:],np.array(dfs[idx]["0.75_scenario_obj"])[1:],alpha = 0.25,color = "tab:purple")
-    plt.vlines(target_list,ymin = -0.92,ymax=-0.8,linestyles=":",color = "red",alpha = 0.5)
+    plt.vlines(target_list,ymin = -0.88,ymax=-0.8,linestyles=":",color = "red",alpha = 0.5)
     # plt.vlines([0.03,0.05,0.10],ymin = -6,ymax=-2,linestyles=":",color = "red",alpha = 1)
     plt.legend(loc = "upper right")
     plt.xlabel("Probability of constraint violation")

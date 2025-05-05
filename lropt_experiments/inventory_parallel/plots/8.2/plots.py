@@ -19,14 +19,15 @@ plt.rcParams.update({
     "font.size":18,
     "font.family": "serif"
 })
-path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/inventory_parallel/plots/8/"
+path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/inventory_parallel/plots/8.2/"
 R = 5
 etas = [0.10,0.15,0.20,0.25,0.30,0.33,0.35,0.40,0.50]
 objs = [0.5,1,2]
 seeds1 = [0,10,20,30,40]
 seeds2 = [50,60,70,80,90]
 foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-01/23-14-44/"
-foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-01/23-20-31/"
+foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-01/23-20-31/"
+foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-04/1/"
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
@@ -58,7 +59,7 @@ for obj in objs:
     dfs[obj].to_csv(path+"gamma_"+str(obj)+"_values.csv")
 df_pre = []
 running_ind = 0
-newfolder = foldername1+str(running_ind)
+newfolder = foldername2+str(running_ind)
 for seed in range(R):
     try:
         df = pd.read_csv(newfolder+'/'+str(seed)+"_linear_untrained_grid.csv")
@@ -66,15 +67,7 @@ for seed in range(R):
         df_pre.append(df)
     except:
         print(2,eta,obj,seed)
-newfolder = foldername2+str(running_ind)
-for seed in range(R):
-    try:
-        df = pd.read_csv(newfolder+'/'+str(seed)+"_linear_untrained_grid.csv")
-        df['seed'] = seeds2[seed]
-        df_pre.append(df)
-    except:
-        print(2,eta,obj,seed)
-df_pre = pd.concat(df_pre)
+df_pre =  pd.concat(df_pre)
 collist_grid = ["Test_val","Avg_prob_test","Validate_val","Avg_prob_validate"]
 grouped = df_pre.groupby(["Rho"], as_index=False)
 mean_vals = grouped[collist_grid].mean().add_prefix("mean_")
@@ -86,7 +79,7 @@ for q in quantiles:
 dfs_grid.to_csv(path+"pretrained.csv")
 df_mv = []
 running_ind = 0
-newfolder = foldername1+str(running_ind)
+newfolder = foldername2+str(running_ind)
 for seed in range(R):
     try:
         df = pd.read_csv(newfolder+'/'+str(seed)+"_mean_var_grid.csv")
@@ -94,16 +87,7 @@ for seed in range(R):
         df_mv.append(df)
     except:
         print(3,eta,obj,seed)
-newfolder = foldername2+str(running_ind)
-for seed in range(R):
-    try:
-        df = pd.read_csv(newfolder+'/'+str(seed)+"_mean_var_grid.csv")
-        df['seed'] = seeds2[seed]
-        df_mv.append(df)
-    except:
-        print(3,eta,obj,seed)
 df_mv = pd.concat(df_mv)
-dfs_mv = []
 collist_grid = ["Test_val","Avg_prob_test","Validate_val","Avg_prob_validate"]
 grouped = df_mv.groupby(["Rho"], as_index=False)
 mean_vals = grouped[collist_grid].mean().add_prefix("mean_")
@@ -114,7 +98,7 @@ for q in quantiles:
     dfs_mv_grid = pd.concat([dfs_mv_grid, quantile_values], axis=1)
 dfs_mv_grid.to_csv(path+"pretrained.csv")
 running_ind = 0
-newfolder = foldername1+str(running_ind)
+newfolder = foldername2+str(running_ind)
 df_nonrob = []
 for seed in range(R):
     try:
@@ -122,13 +106,6 @@ for seed in range(R):
         df_nonrob.append(df)
     except:
         print(4,eta,obj,seed)
-newfolder = foldername2+str(running_ind)
-for seed in range(R):
-    try:
-        df = pd.read_csv(newfolder+'/'+str(seed)+"_vals_nonrob.csv")
-        df_nonrob.append(df)
-    except:
-        print(4.5,eta,obj,seed)
 df_nonrob = pd.concat(df_nonrob)
 # plt.rcParams.update({
 #     "text.usetex":True,
@@ -190,7 +167,7 @@ for eta in etas:
 running_ind = 0
 for eta in etas:
     for obj in objs:
-        newfolder = foldername2+str(running_ind)
+        newfolder = foldername3+str(running_ind)
         for seed in range(5):
             try:
                 df = pd.read_csv(newfolder+'/'+str(seed)+"_vals.csv")
@@ -225,7 +202,7 @@ for target in target_list:
 dfs_best_mv = {}
 for target in target_list:
     dfs_best_mv[target] = []
-    for seed in seeds1+seeds2:
+    for seed in seeds1:
         try:
             curdif = dif
             mindif = np.min(abs(df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target))
@@ -240,7 +217,7 @@ for target in target_list:
 dfs_best_pre = {}
 for target in target_list:
     dfs_best_pre[target] = []
-    for seed in seeds1+seeds2:
+    for seed in seeds1:
         try:
             curdif = dif
             mindif = np.min(abs(df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target))

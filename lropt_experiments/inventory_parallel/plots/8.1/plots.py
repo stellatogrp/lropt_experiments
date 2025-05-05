@@ -19,14 +19,14 @@ plt.rcParams.update({
     "font.size":18,
     "font.family": "serif"
 })
-path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/inventory_parallel/plots/8/"
+path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/inventory_parallel/plots/8.1/"
 R = 5
 etas = [0.10,0.15,0.20,0.25,0.30,0.33,0.35,0.40,0.50]
 objs = [0.5,1,2]
-seeds1 = [0,10,20,30,40]
-seeds2 = [50,60,70,80,90]
-foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-01/23-14-44/"
-foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-01/23-20-31/"
+seeds1 = [100,110,120,130,140]
+seeds2 = [150,160,170,180,190]
+foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-02/22-55-52/"
+foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-02/22-56-23/"
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
@@ -75,6 +75,7 @@ for seed in range(R):
     except:
         print(2,eta,obj,seed)
 df_pre = pd.concat(df_pre)
+dfs_pre = []
 collist_grid = ["Test_val","Avg_prob_test","Validate_val","Avg_prob_validate"]
 grouped = df_pre.groupby(["Rho"], as_index=False)
 mean_vals = grouped[collist_grid].mean().add_prefix("mean_")
