@@ -46,6 +46,6 @@ pretrain: True
 initseedval: 0
 Nval: 500
 epslimtrain: 1450
-addval: 0.0
+addval: 0
 Rvals: 5
-knnvals: 30
+knnvals: 15

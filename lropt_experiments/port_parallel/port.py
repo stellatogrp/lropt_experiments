@@ -50,7 +50,7 @@ def gen_sigmu_varied(n,N = 500,seed = 0):
     for i in range(N):
         F = np.random.normal(size = (n,2))
         context.append(F)
-        csig = 0.2*F@(F.T)
+        csig = 0.1*F@(F.T)
         sig.append(csig)
         mu.append(np.random.uniform(0.5,1,n))
     return np.stack(sig), np.vstack(mu), np.stack(context), origmu
@@ -59,7 +59,7 @@ def gen_demand_varied(sig,mu,orig_mu,N,seed=399):
     pointlist = []
     np.random.seed(seed)
     for i in range(N):
-        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0.1*np.eye(orig_mu.shape[0]))
+        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0.05*np.eye(orig_mu.shape[0]))
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
@@ -89,7 +89,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             else: 
                 data_gen = True
 
-        if cfg.eta == 0.01 and cfg.obj_scale==0.5:
+        if cfg.eta == 0.15 and cfg.obj_scale==0.5:
             context_evals = 0
             context_probs = 0
             for j in range(num_context):
@@ -238,7 +238,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         except:
             None
 
-        if cfg.eta == 0.01 and cfg.obj_scale == 0.5:
+        if cfg.eta == 0.15 and cfg.obj_scale == 0.5:
             settings.init_rho = cfg.init_rho
             settings.num_iter = 1
             settings.initialize_predictor = True
@@ -251,29 +251,29 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
 
 
             # untrained linear
-            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = 75)
+            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = 90)
             # settings.predictor = lropt.CovPredictor()
             settings.num_iter = 1
             result2 = trainer.train(settings=settings)
             A_fin2 = result2.A
             b_fin2 = result2.b
-            result_grid3 = trainer.grid(rholst=eps_list,init_A=A_fin2, init_b=b_fin2, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result2._predictor)
+            result_grid3 = trainer.grid(rholst=eps_list_train,init_A=A_fin2, init_b=b_fin2, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result2._predictor)
             dfgrid3 = result_grid3.df
             dfgrid3 = dfgrid3.drop(columns=["z_vals","x_vals"])
             dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_pretrained_grid.csv')
             torch.save(result2._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'pretrained_linear.pth')
 
-            # untrained covpred
-            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 100,knn_cov = True, n_neighbors=50,knn_scale = 1)
-            settings.num_iter = 1
-            resultcov = trainer.train(settings=settings)
-            A_fincov = resultcov.A
-            b_fincov = resultcov.b
-            result_grid5 = trainer.grid(rholst=eps_list_train,init_A=A_fincov, init_b=b_fincov, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = resultcov._predictor)
-            dfgrid5 = result_grid5.df
-            dfgrid5 = dfgrid5.drop(columns=["z_vals","x_vals"])
-            dfgrid5.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_cov_pretrained_grid.csv')
-            torch.save(resultcov._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'pretrained_linear_cov.pth')
+            # # untrained covpred
+            # settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 100,knn_cov = True, n_neighbors=90,knn_scale = 1)
+            # settings.num_iter = 1
+            # resultcov = trainer.train(settings=settings)
+            # A_fincov = resultcov.A
+            # b_fincov = resultcov.b
+            # result_grid5 = trainer.grid(rholst=eps_list_train,init_A=A_fincov, init_b=b_fincov, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = resultcov._predictor)
+            # dfgrid5 = result_grid5.df
+            # dfgrid5 = dfgrid5.drop(columns=["z_vals","x_vals"])
+            # dfgrid5.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_cov_pretrained_grid.csv')
+            # torch.save(resultcov._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'pretrained_linear_cov.pth')
 
         try:
             plot_iters(result.df,result.df_validate, steps=num_iters, title="training_"+str(cfg.eta),kappa=settings.kappa)
@@ -284,7 +284,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         beg2, end2 = 0, 100
         plt.figure(figsize=(15, 4))
         
-        if cfg.eta == 0.01 and cfg.obj_scale == 0.5:
+        if cfg.eta == 0.15 and cfg.obj_scale == 0.5:
             plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
                 dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
             plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(

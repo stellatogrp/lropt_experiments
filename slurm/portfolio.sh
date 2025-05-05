@@ -14,7 +14,7 @@ module purge
 module load anaconda3/2023.9
 conda activate lropt_rev
 
-python lropt_experiments/port_parallel/port.py 
+python lropt_experiments/port_parallel/port.py --config-name=port.yaml
 #--config-name=port.yaml seed=10 eta=10 
 
 # python portfolio/plot_avg_10.py
