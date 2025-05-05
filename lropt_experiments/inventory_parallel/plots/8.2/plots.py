@@ -28,6 +28,7 @@ seeds2 = [50,60,70,80,90]
 foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-01/23-14-44/"
 foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-01/23-20-31/"
 foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-04/1/"
+foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-04/1.1/"
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
@@ -59,7 +60,7 @@ for obj in objs:
     dfs[obj].to_csv(path+"gamma_"+str(obj)+"_values.csv")
 df_pre = []
 running_ind = 0
-newfolder = foldername2+str(running_ind)
+newfolder = foldername4+str(running_ind)
 for seed in range(R):
     try:
         df = pd.read_csv(newfolder+'/'+str(seed)+"_linear_untrained_grid.csv")
@@ -79,7 +80,7 @@ for q in quantiles:
 dfs_grid.to_csv(path+"pretrained.csv")
 df_mv = []
 running_ind = 0
-newfolder = foldername2+str(running_ind)
+newfolder = foldername4+str(running_ind)
 for seed in range(R):
     try:
         df = pd.read_csv(newfolder+'/'+str(seed)+"_mean_var_grid.csv")
@@ -98,7 +99,7 @@ for q in quantiles:
     dfs_mv_grid = pd.concat([dfs_mv_grid, quantile_values], axis=1)
 dfs_mv_grid.to_csv(path+"pretrained.csv")
 running_ind = 0
-newfolder = foldername2+str(running_ind)
+newfolder = foldername4+str(running_ind)
 df_nonrob = []
 for seed in range(R):
     try:
@@ -278,5 +279,5 @@ def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=None):
     plt.tight_layout()
     # plt.xlim([-0.02,0.20])
     plt.title("Out-of-sample objectives (test set)")
-    plt.savefig(path+"Test_objectives_best_all_10.pdf",bbox_inches = "tight")
+    plt.savefig(path+"Test_objectives_best_all.pdf",bbox_inches = "tight")
 plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid)

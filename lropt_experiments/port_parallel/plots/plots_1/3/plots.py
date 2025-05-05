@@ -25,7 +25,7 @@ etas = [0.15,0.20,0.23,0.25,0.30,0.33,0.35,0.40,0.45]
 objs = [ 0.5,0.75,1,1.2,1.5]
 seeds1 = [0,10,20,30,40,50,60,70,80,90]
 foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-05-04/3.2/"
-# foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-04-28/30_s1/"
+foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-05-04/3.3/"
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
@@ -57,7 +57,7 @@ for obj in objs:
     dfs[obj].to_csv(path+"gamma_"+str(obj)+"_values.csv")
 df_pre = []
 running_ind = 0
-newfolder = foldername1+str(running_ind)
+newfolder = foldername2+str(running_ind)
 for seed in range(R):
     try:
         df = pd.read_csv(newfolder+'/'+str(seed)+"_linear_pretrained_grid.csv")
@@ -78,7 +78,7 @@ for q in quantiles:
 dfs_grid.to_csv(path+"pretrained.csv")
 df_mv = []
 running_ind = 0
-newfolder = foldername1+str(running_ind)
+newfolder = foldername2+str(running_ind)
 for seed in range(R):
     try:
         df = pd.read_csv(newfolder+'/'+str(seed)+"_mean_var_grid.csv")
@@ -98,7 +98,7 @@ for q in quantiles:
     dfs_mv_grid = pd.concat([dfs_mv_grid, quantile_values], axis=1)
 dfs_mv_grid.to_csv(path+"pretrained.csv")
 running_ind = 0
-newfolder = foldername1+str(running_ind)
+newfolder = foldername2+str(running_ind)
 df_nonrob = []
 for seed in range(R):
     try:
