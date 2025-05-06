@@ -76,79 +76,76 @@ def calc_eval(u,r,y,Y,t,h,d,s,L):
 def inv_exp(cfg,hydra_out_dir,seed):
     finseed = initseed + 10*seed
     print(finseed)
-    try: 
-        data_gen = False
-        while not data_gen:
-            try: 
-                data = gen_demand_varied(sig,y_data,d,N,seed=finseed)
-                train = data[train_indices]
-                init = sc.linalg.sqrtm(np.cov(train.T)+0.00001*np.eye(n))
-                init_bval = np.mean(train, axis=0)
-            except Exception as e:
-                finseed += 1
-            else: 
-                data_gen = True
+    data_gen = False
+    while not data_gen:
+        try: 
+            data = gen_demand_varied(sig,y_data,d,N,seed=finseed)
+            train = data[train_indices]
+            init = sc.linalg.sqrtm(np.cov(train.T)+0.00001*np.eye(n))
+            init_bval = np.mean(train, axis=0)
+        except Exception as e:
+            finseed += 1
+        else: 
+            data_gen = True
 
-        u = lropt.UncertainParameter(m,
-                                        uncertainty_set = lropt.MRO(K=train.shape[0], p=2, data=train, train=True))
-        # formulate cvxpy variable
-        L = cp.Variable()
-        s = cp.Variable(n)
-        y = cp.Variable(n)
-        Y = cp.Variable((n,n))
-        r = lropt.ContextParameter(n, data = y_data) 
-        context = lropt.ContextParameter((n,m), data=context_dat)           
-        Y_r = cp.Variable(n)
-        # formulate objective
-        objective = cp.Minimize(L)
+    u = lropt.UncertainParameter(m,
+                                    uncertainty_set = lropt.MRO(K=train.shape[0], p=2, data=train, train=True))
+    # formulate cvxpy variable
+    L = cp.Variable()
+    s = cp.Variable(n)
+    y = cp.Variable(n)
+    Y = cp.Variable((n,n))
+    r = lropt.ContextParameter(n, data = y_data) 
+    context = lropt.ContextParameter((n,m), data=context_dat)           
+    Y_r = cp.Variable(n)
+    # formulate objective
+    objective = cp.Minimize(L)
 
-        # formulate constraints
-        constraints = []
-        constraints += [context >= -200]
-        cons = [-r@y - Y_r@u + (t+h)@s - L]
-        for idx in range(n):
-            cons += [y[idx]+Y[idx]@u-s[idx]]
-            cons += [y[idx]+Y[idx]@u-u[idx]]
-        constraints += [lropt.max_of_uncertain(cons)<=0]
-        constraints += [r@Y == Y_r]
-        constraints += [np.ones(n)@s == C]
-        constraints += [s <=c, s >=0]
-        eval_exp = -r@y - r@Y@u + (t+h)@s
-        # formulate Robust Problem
-        prob = lropt.RobustProblem(objective, constraints,eval_exp = eval_exp)
+    # formulate constraints
+    constraints = []
+    constraints += [context >= -200]
+    cons = [-r@y - Y_r@u + (t+h)@s - L]
+    for idx in range(n):
+        cons += [y[idx]+Y[idx]@u-s[idx]]
+        cons += [y[idx]+Y[idx]@u-u[idx]]
+    constraints += [lropt.max_of_uncertain(cons)<=0]
+    constraints += [r@Y == Y_r]
+    constraints += [np.ones(n)@s == C]
+    constraints += [s <=c, s >=0]
+    eval_exp = -r@y - r@Y@u + (t+h)@s
+    # formulate Robust Problem
+    prob = lropt.RobustProblem(objective, constraints,eval_exp = eval_exp)
 
-        # Train A and b
-        trainer = lropt.Trainer(prob)
-        settings = lropt.TrainerSettings()
-        settings.data = data
-        result_grid = trainer.grid(rholst=eps_list, init_A=np.eye(n),
-                            init_b=np.zeros(n), seed=5,
-                            init_alpha=0., test_percentage=cfg.test_percentage, validate_percentage = cfg.validate_percentage, quantiles = (0.3, 0.7),settings = settings)
-        dfgrid = result_grid.df
-        dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
-        dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'dro_grid.csv')
+    # Train A and b
+    trainer = lropt.Trainer(prob)
+    settings = lropt.TrainerSettings()
+    settings.data = data
+    result_grid = trainer.grid(rholst=eps_list, init_A=np.eye(n),
+                        init_b=np.zeros(n), seed=5,
+                        init_alpha=0., test_percentage=cfg.test_percentage, validate_percentage = cfg.validate_percentage, quantiles = (0.3, 0.7),settings = settings)
+    dfgrid = result_grid.df
+    dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
+    dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'dro_grid.csv')
 
-        beg1, end1 = 0, 100
-        beg2, end2 = 0, 100
-        plt.figure(figsize=(15, 4))
+    beg1, end1 = 0, 100
+    beg2, end2 = 0, 100
+    plt.figure(figsize=(15, 4))
+    
+    if cfg.eta == 0.10 and cfg.obj_scale==0.5:
+        plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
+            dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"DRO validate set", marker="v", zorder=0)
         
-        if cfg.eta == 0.10 and cfg.obj_scale==0.5:
-            plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
-                dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"DRO validate set", marker="v", zorder=0)
-            
-            plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_test']), axis=1)[beg1:end1], np.mean(np.vstack(
-            dfgrid['Test_val']), axis=1)[beg1:end1], color="tab:blue", label=r"DRO test set", marker="s", zorder=0)
-        plt.ylabel("Objective value")
-        plt.xlabel(r"Probability of constraint violation $(\hat{\eta})$")
-        # plt.ylim([-9, 0])
-        plt.grid()
-        plt.legend()
-        plt.savefig(hydra_out_dir+'/'+str(seed)+'_'+"port_objective_vs_violations_"+str(cfg.eta)+".pdf", bbox_inches='tight')
+        plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_test']), axis=1)[beg1:end1], np.mean(np.vstack(
+        dfgrid['Test_val']), axis=1)[beg1:end1], color="tab:blue", label=r"DRO test set", marker="s", zorder=0)
+    plt.ylabel("Objective value")
+    plt.xlabel(r"Probability of constraint violation $(\hat{\eta})$")
+    # plt.ylim([-9, 0])
+    plt.grid()
+    plt.legend()
+    plt.savefig(hydra_out_dir+'/'+str(seed)+'_'+"port_objective_vs_violations_"+str(cfg.eta)+".pdf", bbox_inches='tight')
 
-        plt.figure(figsize=(15, 4))
-        return None
-    except:
-        return None
+    plt.figure(figsize=(15, 4))
+    return None
 
 @hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/inventory_parallel/configs",config_name = "inv.yaml", version_base = None)
 def main_func(cfg):
