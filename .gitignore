@@ -166,3 +166,4 @@ cython_debug/
 .DS_Store
 .aider*
 multirun/
+backup/
