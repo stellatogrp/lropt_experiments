@@ -1,0 +1,47 @@
+# defaults:
+#   - override hydra/launcher: joblib
+hydra:
+  # launcher:
+  #   n_jobs: 12
+  job:
+    chdir: True
+  mode: MULTIRUN
+  sweeper:
+    params:
+      eta: 0.05,0.10,0.15,0.20,0.23,0.25,0.30,0.33,0.35,0.40,0.45
+      obj_scale: 0.5,0.75,1,1.2,1.5
+eta: 0.15
+obj_scale: 1
+seed: 0
+lr: 0.01
+num_iter: 300
+optimizer: "SGD"
+init_rho: 1
+init_lam: 1
+init_mu: 1
+mu_multiplier: 1.005
+test_percentage: 0.5
+save_history: True
+lr_step_size: 60
+lr_gamma: 0.5
+random_init: False
+parallel: False
+kappa: 0
+contextual: True
+max_iter_line_search: 100
+line_search: True
+max_batch_size: 100
+batch_percentage: 0.2
+validate_percentage: 0.2
+test_frequency: 5000
+validate_frequency: 2000
+initialize_predictor: True
+Nval: 500
+nval: 30
+Rval: 10
+seedvals: 0
+knnnum: 15
+epslim: 0.50360
+epslimtrain: 0.510120
+addval: 0.1
+Fmults: 0.2

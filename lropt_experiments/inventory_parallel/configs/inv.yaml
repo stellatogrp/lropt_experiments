@@ -43,9 +43,9 @@ sigmult: 0.3
 epsrange: 1450
 gridalso: False
 pretrain: True
-initseedval: 0
+initseedval: 50
 Nval: 1000
 epslimtrain: 1990
 addval: 0
 Rvals: 5
-knnvals: 15
+knnvals: 30

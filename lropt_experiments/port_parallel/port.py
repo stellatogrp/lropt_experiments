@@ -89,7 +89,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             else: 
                 data_gen = True
 
-        if cfg.eta == 0.15 and cfg.obj_scale==0.5:
+        if cfg.eta == 0.05 and cfg.obj_scale==0.5:
             context_evals = 0
             context_probs = 0
             for j in range(num_context):
@@ -238,7 +238,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         except:
             None
 
-        if cfg.eta == 0.15 and cfg.obj_scale == 0.5:
+        if cfg.eta == 0.05 and cfg.obj_scale == 0.5:
             settings.init_rho = cfg.init_rho
             settings.num_iter = 1
             settings.initialize_predictor = True
@@ -251,7 +251,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
 
 
             # untrained linear
-            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = 60)
+            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = 30)
             # settings.predictor = lropt.CovPredictor()
             settings.num_iter = 1
             result2 = trainer.train(settings=settings)
@@ -284,7 +284,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         beg2, end2 = 0, 100
         plt.figure(figsize=(15, 4))
         
-        if cfg.eta == 0.15 and cfg.obj_scale == 0.5:
+        if cfg.eta == 0.05 and cfg.obj_scale == 0.5:
             plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
                 dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
             plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
@@ -341,12 +341,12 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    seed_list = [0]
-    n_list = [30]
+    seed_list = [0,0,0]
+    n_list = [10,20,30]
     R = 10
     initseed = seed_list[idx]
     n = n_list[idx]
-    N = 2000
+    N = 1000
     num_context = 20
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)
