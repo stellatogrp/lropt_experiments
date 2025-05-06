@@ -88,7 +88,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
         else: 
             data_gen = True
 
-    u = lropt.UncertainParameter(m,
+    u = lropt.UncertainParameter(n,
                                     uncertainty_set = lropt.MRO(K=train.shape[0], p=2, data=train, train=True))
     # formulate cvxpy variable
     L = cp.Variable()
@@ -117,34 +117,40 @@ def inv_exp(cfg,hydra_out_dir,seed):
     prob = lropt.RobustProblem(objective, constraints,eval_exp = eval_exp)
 
     # Train A and b
-    trainer = lropt.Trainer(prob)
-    settings = lropt.TrainerSettings()
-    settings.data = data
-    result_grid = trainer.grid(rholst=eps_list, init_A=np.eye(n),
-                        init_b=np.zeros(n), seed=5,
-                        init_alpha=0., test_percentage=cfg.test_percentage, validate_percentage = cfg.validate_percentage, quantiles = (0.3, 0.7),settings = settings)
-    dfgrid = result_grid.df
-    dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
-    dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'dro_grid.csv')
+    try:
+        trainer = lropt.Trainer(prob)
+        settings = lropt.TrainerSettings()
+        settings.data = data
+        result_grid = trainer.grid(rholst=eps_list, init_A=np.eye(n),
+                            init_b=np.zeros(n), seed=5,
+                            init_alpha=0., test_percentage=cfg.test_percentage, validate_percentage = cfg.validate_percentage, quantiles = (0.3, 0.7),settings = settings)
+        dfgrid = result_grid.df
+        dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
+        dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'dro_grid.csv')
+    except:
+        print("grid failed")
 
-    beg1, end1 = 0, 100
-    beg2, end2 = 0, 100
-    plt.figure(figsize=(15, 4))
-    
-    if cfg.eta == 0.10 and cfg.obj_scale==0.5:
-        plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
-            dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"DRO validate set", marker="v", zorder=0)
+    try:
+        beg1, end1 = 0, 100
+        beg2, end2 = 0, 100
+        plt.figure(figsize=(15, 4))
         
-        plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_test']), axis=1)[beg1:end1], np.mean(np.vstack(
-        dfgrid['Test_val']), axis=1)[beg1:end1], color="tab:blue", label=r"DRO test set", marker="s", zorder=0)
-    plt.ylabel("Objective value")
-    plt.xlabel(r"Probability of constraint violation $(\hat{\eta})$")
-    # plt.ylim([-9, 0])
-    plt.grid()
-    plt.legend()
-    plt.savefig(hydra_out_dir+'/'+str(seed)+'_'+"port_objective_vs_violations_"+str(cfg.eta)+".pdf", bbox_inches='tight')
+        if cfg.eta == 0.10 and cfg.obj_scale==0.5:
+            plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
+                dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"DRO validate set", marker="v", zorder=0)
+            
+            plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_test']), axis=1)[beg1:end1], np.mean(np.vstack(
+            dfgrid['Test_val']), axis=1)[beg1:end1], color="tab:blue", label=r"DRO test set", marker="s", zorder=0)
+        plt.ylabel("Objective value")
+        plt.xlabel(r"Probability of constraint violation $(\hat{\eta})$")
+        # plt.ylim([-9, 0])
+        plt.grid()
+        plt.legend()
+        plt.savefig(hydra_out_dir+'/'+str(seed)+'_'+"port_objective_vs_violations_"+str(cfg.eta)+".pdf", bbox_inches='tight')
 
-    plt.figure(figsize=(15, 4))
+        plt.figure(figsize=(15, 4))
+    except:
+        pass
     return None
 
 @hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/inventory_parallel/configs",config_name = "inv.yaml", version_base = None)
@@ -167,10 +173,10 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    seed_list = [0,50]
+    seed_list = [0,0]
     m_list= [4,4]
     n_list = [10,10]
-    N_list = [1000,1000]
+    N_list = [1000,500]
     # contxtual = [T,T,F,T,T,T]
     R = 5
     initseed = seed_list[idx]

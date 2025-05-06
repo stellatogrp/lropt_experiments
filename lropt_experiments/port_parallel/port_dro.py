@@ -1,0 +1,185 @@
+import argparse
+import os
+import sys
+import joblib
+from joblib import Parallel, delayed
+output_stream = sys.stdout
+import cvxpy as cp
+import scipy as sc
+import numpy as np
+import numpy.random as npr
+import torch
+from sklearn import datasets
+import pandas as pd
+import lropt
+import hydra
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from mpl_toolkits.axes_grid1.inset_locator import mark_inset, zoomed_inset_axes
+import warnings
+warnings.filterwarnings("ignore")
+
+def get_n_processes(max_n=np.inf):
+    """Get number of processes from current cps number
+    Parameters
+    ----------
+    max_n: int
+        Maximum number of processes.
+    Returns
+    -------
+    float
+        Number of processes to use.
+    """
+
+    try:
+        # Check number of cpus if we are on a SLURM server
+        n_cpus = int(os.environ["SLURM_CPUS_PER_TASK"])
+    except KeyError:
+        n_cpus = joblib.cpu_count()
+
+    n_proc = max(min(max_n, n_cpus), 1)
+
+    return n_proc
+
+def gen_sigmu_varied(n,N = 500,seed = 0):
+    np.random.seed(seed)
+    sig = []
+    context = []
+    mu = []
+    origmu = np.random.uniform(0.5,1,n)
+    for i in range(N):
+        F = np.random.normal(size = (n,2))
+        context.append(F)
+        csig = 0.2*F@(F.T)
+        sig.append(csig)
+        mu.append(np.random.uniform(0.5,1,n))
+    return np.stack(sig), np.vstack(mu), np.stack(context), origmu
+
+def gen_demand_varied(sig,mu,orig_mu,N,seed=399):
+    pointlist = []
+    np.random.seed(seed)
+    for i in range(N):
+        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0.1*np.eye(orig_mu.shape[0]))
+        pointlist.append(d_train)
+    return np.vstack(pointlist)
+
+def calc_eval(x,t,u):
+    val = 0
+    vio = 0
+    for i in range(u.shape[0]):
+        val_cur = -x@u[i]
+        val+= val_cur
+        vio += (val_cur >= t)
+    return val/u.shape[0], vio/u.shape[0]
+
+
+def portfolio_exp(cfg,hydra_out_dir,seed):
+    finseed = initseed + 10*seed
+    print(finseed)
+    data_gen = False
+    while not data_gen:
+        try: 
+            data = gen_demand_varied(sig,mu,orig_mu,N,seed=seed)
+            train = data[train_indices]
+            init = sc.linalg.sqrtm(np.cov(train.T))
+            init_bval = np.mean(train, axis=0)
+        except Exception as e:
+            finseed += 1
+        else: 
+            data_gen = True
+
+    u = lropt.UncertainParameter(n,
+                            uncertainty_set=lropt.MRO(K=train.shape[0], p=2, data=train, train=True))
+    # Formulate the Robust Problem
+    x = cp.Variable(n)
+    t = cp.Variable()
+    context_param = lropt.ContextParameter((n,2), data=context)
+    mu_param = lropt.ContextParameter(n, data=mu)
+
+    objective = cp.Minimize(t)
+    constraints = [-x@u <= t, cp.sum(x) == 1, x >= 0]
+    constraints += [context_param >= -1000, mu_param >= -1000]
+    eval_exp = -x @ u
+
+    prob = lropt.RobustProblem(objective, constraints, eval_exp=eval_exp)
+
+    # Train A and b
+    trainer = lropt.Trainer(prob)
+    settings = lropt.TrainerSettings()
+    settings.data = data
+    result_grid = trainer.grid(rholst=eps_list, init_A=np.eye(n),
+                        init_b=np.zeros(n), seed=5,
+                        init_alpha=0., test_percentage=cfg.test_percentage, validate_percentage = cfg.validate_percentage, quantiles = (0.3, 0.7),settings = settings)
+    dfgrid = result_grid.df
+    dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
+    dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'dro_grid.csv')
+
+    try:
+        beg1, end1 = 0, 100
+        beg2, end2 = 0, 100
+        plt.figure(figsize=(15, 4))
+        
+        plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
+            dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"DRO validate set", marker="v", zorder=0)
+
+        plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_test']), axis=1)[beg1:end1], np.mean(np.vstack(
+        dfgrid['Test_val']), axis=1)[beg1:end1], color="tab:blue", label=r"DRO test set", marker="s", zorder=0)      
+
+        plt.ylabel("Objective value")
+        plt.xlabel(r"Probability of constraint violation $(\hat{\eta})$")
+        # plt.ylim([-9, 0])
+        plt.grid()
+        plt.legend()
+        plt.savefig(hydra_out_dir+'/'+str(seed)+'_'+"port_objective_vs_violations_"+str(cfg.eta)+".pdf", bbox_inches='tight')
+        plt.figure(figsize=(15, 4))
+    except:
+        None
+    return None
+
+@hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/port_parallel/configs",config_name = "port.yaml", version_base = None)
+def main_func(cfg):
+    hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    # print(f"Current working directory: {os.getcwd()}")
+    njobs = get_n_processes(30)
+    Parallel(n_jobs=njobs)(
+        delayed(portfolio_exp)(cfg,hydra_out_dir,r) for r in range(R))
+    # for r in range(R):
+    #     portfolio_exp(cfg,hydra_out_dir,r)
+    
+
+if __name__ == "__main__":
+    idx = int(os.environ["SLURM_ARRAY_TASK_ID"])
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--foldername', type=str,
+    #                     default="portfolio/", metavar='N')
+    # parser.add_argument('--seed', type=int, default=0)
+    # parser.add_argument('--R', type=int, default=2)
+    # parser.add_argument('--n', type=int, default=15)
+    # arguments = parser.parse_args()
+    seed_list = [0,0,0]
+    n_list = [10,20,30]
+    R = 5
+    initseed = seed_list[idx]
+    n = n_list[idx]
+    N = 500
+    num_context = 20
+    test_p = 0.5
+    # sig, mu = gen_sigmu(n,1)
+    num_reps = int(N/num_context)
+    sig, mu, context, orig_mu = gen_sigmu_varied(n,num_context,seed= 0)
+    sig = np.vstack([sig]*num_reps)
+    mu = np.vstack([mu]*num_reps)
+    context = np.vstack([context]*num_reps)
+    test_valid_indices = np.random.choice(N,int((test_p+0.2)*N), replace=False)
+    test_indices = test_valid_indices[:int((test_p)*N)]
+    valid_indices = test_valid_indices[int((test_p)*N):]
+    train_indices = [i for i in range(N) if i not in test_valid_indices]
+    context_inds = {}
+    test_inds = {}
+    for j in range(num_context):
+      context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
+      test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
+    eps_list=np.linspace(0.5, 3, 60)
+    eps_list_train = np.linspace(0.5, 10, 120)
+    main_func()
+
