@@ -259,7 +259,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             result2 = trainer.train(settings=settings)
             A_fin2 = result2.A
             b_fin2 = result2.b
-            result_grid3 = trainer.grid(rholst=eps_list_train,init_A=A_fin2, init_b=b_fin2, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result2._predictor)
+            result_grid3 = trainer.grid(rholst=eps_list_train,init_A=A_fin2, init_b=b_fin2, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result2._predictor,settings=settings)
             dfgrid3 = result_grid3.df
             dfgrid3 = dfgrid3.drop(columns=["z_vals","x_vals"])
             dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_pretrained_grid.csv')
