@@ -228,17 +228,17 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
                 ax1.set_xscale("log")
                 ax2.set_xscale("log")
             plt.savefig(hydra_out_dir+'/'+str(seed)+'_'+title+"_iters.pdf", bbox_inches='tight')
-        # try:
-        #     findfs = []
-        #     for rho in eps_list_train:
-        #         df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
-        #         data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
-        #         single_row_df = pd.DataFrame(data_df, index=[0])
-        #         findfs.append(single_row_df)
-        #     findfs = pd.concat(findfs)
-        #     findfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
-        # except:
-        #     None
+        try:
+            findfs = []
+            for rho in eps_list_train:
+                df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
+                data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
+                single_row_df = pd.DataFrame(data_df, index=[0])
+                findfs.append(single_row_df)
+            findfs = pd.concat(findfs)
+            findfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
+        except:
+            None
 
         if cfg.eta == 0.05 and cfg.obj_scale == 0.5:
             settings.init_rho = cfg.init_rho
