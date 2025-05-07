@@ -24,10 +24,12 @@ validate_percentage: 0.2
 test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: true
-nval: 20
-Rval: 10
-seedvals: 0
+nval: 30
+Rval: 1
+seedvals: '090'
 epslim: 0.5036
 addval: 0.1
 Fmults: 0.2
-Nvals: 500
+Nvals: 2000
+initmat: eye
+Kval: all
