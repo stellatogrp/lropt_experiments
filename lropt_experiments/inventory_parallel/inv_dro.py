@@ -89,7 +89,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
             data_gen = True
 
     u = lropt.UncertainParameter(n,
-                                    uncertainty_set = lropt.MRO(K=train.shape[0], p=2, data=train, train=True))
+                                    uncertainty_set = lropt.MRO(K=50, p=2, data=train, train=True))
     # formulate cvxpy variable
     L = cp.Variable()
     s = cp.Variable(n)
@@ -176,7 +176,7 @@ if __name__ == "__main__":
     seed_list = [0,10,20,30,40]
     N_list = [1000,1000,1000,1000,1000]
     # contxtual = [T,T,F,T,T,T]
-    R = 1
+    R = 10
     initseed = seed_list[idx]
     test_p = 0.5
     N = N_list[idx]

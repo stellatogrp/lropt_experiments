@@ -46,4 +46,5 @@ epsrange: 0.1460
 initseedval: 10
 Nval: 1000
 addval: 0.0
-Rvals: 1
+Rvals: 10
+mroK: 50
