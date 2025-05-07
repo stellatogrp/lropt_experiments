@@ -224,6 +224,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
         settings.initialize_predictor = cfg.initialize_predictor
         settings.num_iter = cfg.num_iter
         settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 100)
+        settings.data=data
         try: 
             result = trainer.train(settings=settings)
             df = result.df
@@ -238,19 +239,19 @@ def inv_exp(cfg,hydra_out_dir,seed):
         except:
             print("training failed ",finseed,cfg.eta,cfg.obj_scale)
 
-        try:
-            findfs = []
-            for rho in eps_list_train:
-                df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result._predictor], rho_list=[rho])
-                data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
-                single_row_df = pd.DataFrame(data_df, index=[0])
-                findfs.append(single_row_df)
-                tempdfs = pd.concat(findfs)
-                tempdfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
-            findfs = pd.concat(findfs)
-            findfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
-        except:
-            print("compare failed")
+        # try:
+        #     findfs = []
+        #     for rho in eps_list_train:
+        #         df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result._predictor], rho_list=[rho])
+        #         data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
+        #         single_row_df = pd.DataFrame(data_df, index=[0])
+        #         findfs.append(single_row_df)
+        #         tempdfs = pd.concat(findfs)
+        #         tempdfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
+        #     findfs = pd.concat(findfs)
+        #     findfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
+        # except:
+        #     print("compare failed")
 
         if cfg.eta == 0.10 and cfg.obj_scale==0.5:
             settings.init_rho = cfg.init_rho
@@ -258,13 +259,13 @@ def inv_exp(cfg,hydra_out_dir,seed):
             settings.initialize_predictor = True
             result_grid = trainer.grid(rholst=eps_list, init_A=init,
                                 init_b=init_bval, seed=5,
-                                init_alpha=0., test_percentage=test_p, quantiles = (0.3, 0.7))
+                                init_alpha=0., test_percentage=test_p, quantiles = (0.3, 0.7),settings=settings)
             dfgrid = result_grid.df
             dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
             dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'mean_var_grid.csv')
 
             # untrained linear
-            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 100,knn_cov=True,n_neighbors=30)
+            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 100,knn_cov=True,n_neighbors=int(N*0.3*0.1),knn_scale = cfg.knn_mult)
             settings.num_iter = 1
             result2 = trainer.train(settings=settings)
             A_fin2 = result2.A
@@ -342,9 +343,7 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    seed_list = [50,0]
-    m_list= [4,4]
-    n_list = [10,10]
+    seed_list = [0,50]
     N_list = [1000,1000]
     # contxtual = [T,T,F,T,T,T]
     R = 5
@@ -352,8 +351,8 @@ if __name__ == "__main__":
     test_p = 0.5
     N = N_list[idx]
     #1000
-    n = n_list[idx]
-    m = m_list[idx]
+    n = 10
+    m = 4
     #m_list[idx]
     np.random.seed(27)
     y_nom = np.random.uniform(2,4,n)

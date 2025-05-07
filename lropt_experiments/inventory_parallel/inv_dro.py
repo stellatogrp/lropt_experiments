@@ -173,18 +173,16 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    seed_list = [0,0]
-    m_list= [4,4]
-    n_list = [10,10]
-    N_list = [1000,500]
+    seed_list = [0,10,20,30,40]
+    N_list = [1000,1000,1000,1000,1000]
     # contxtual = [T,T,F,T,T,T]
-    R = 5
+    R = 1
     initseed = seed_list[idx]
     test_p = 0.5
     N = N_list[idx]
     #1000
-    n = n_list[idx]
-    m = m_list[idx]
+    n = 10
+    m = 4
     #m_list[idx]
     np.random.seed(27)
     y_nom = np.random.uniform(2,4,n)

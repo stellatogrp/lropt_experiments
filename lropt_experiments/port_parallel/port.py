@@ -172,6 +172,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         settings.parallel = cfg.parallel
         settings.kappa = cfg.kappa
         settings.contextual = cfg.contextual
+        settings.batch_percentage = cfg.batch_percentage
         settings.eta= cfg.eta
         settings.obj_scale = cfg.obj_scale
         settings.max_iter_line_search = cfg.max_iter_line_search
@@ -184,6 +185,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         settings.initialize_predictor = cfg.initialize_predictor
         settings.num_iter = cfg.num_iter
         settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200)
+        settings.data = data
         try: 
             result = trainer.train(settings=settings)
             df = result.df
@@ -226,17 +228,17 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
                 ax1.set_xscale("log")
                 ax2.set_xscale("log")
             plt.savefig(hydra_out_dir+'/'+str(seed)+'_'+title+"_iters.pdf", bbox_inches='tight')
-        try:
-            findfs = []
-            for rho in eps_list_train:
-                df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
-                data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
-                single_row_df = pd.DataFrame(data_df, index=[0])
-                findfs.append(single_row_df)
-            findfs = pd.concat(findfs)
-            findfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
-        except:
-            None
+        # try:
+        #     findfs = []
+        #     for rho in eps_list_train:
+        #         df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
+        #         data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
+        #         single_row_df = pd.DataFrame(data_df, index=[0])
+        #         findfs.append(single_row_df)
+        #     findfs = pd.concat(findfs)
+        #     findfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
+        # except:
+        #     None
 
         if cfg.eta == 0.05 and cfg.obj_scale == 0.5:
             settings.init_rho = cfg.init_rho
@@ -244,14 +246,14 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             settings.initialize_predictor = True
             result_grid = trainer.grid(rholst=eps_list, init_A=init,
                                 init_b=init_bval, seed=5,
-                                init_alpha=0., test_percentage=test_p, quantiles = (0.3, 0.7))
+                                init_alpha=0., test_percentage=test_p, quantiles = (0.3, 0.7),settings=settings)
             dfgrid = result_grid.df
             dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
             dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'mean_var_grid.csv')
 
 
             # untrained linear
-            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = 30)
+            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
             # settings.predictor = lropt.CovPredictor()
             settings.num_iter = 1
             result2 = trainer.train(settings=settings)
@@ -346,7 +348,7 @@ if __name__ == "__main__":
     R = 10
     initseed = seed_list[idx]
     n = n_list[idx]
-    N = 1000
+    N = 2000
     num_context = 20
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)

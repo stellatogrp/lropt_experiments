@@ -8,7 +8,7 @@ hydra:
   mode: MULTIRUN
   sweeper:
     params:
-      eta: 0.15
+      eta: 0.05
       #,0.05,0.10,0.15,0.18,0.20,0.23,0.25,0.30,0.33,0.35,0.40,0.45
       obj_scale: 0.5
       #,0.75,1,1.2,1.5
@@ -41,8 +41,9 @@ initialize_predictor: True
 nval: 30
 Rval: 10
 seedvals: 0
-knnnum: 60
+knnnum: 0.1
 epslim: 0.50360
 epslimtrain: 0.510120
 addval: 0.1
 Fmults: 0.2
+knn_mult: 0.95

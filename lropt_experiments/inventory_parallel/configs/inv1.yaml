@@ -50,4 +50,5 @@ Nval: 1000
 epslimtrain: 1990
 addval: 0.0
 Rvals: 5
-knnvals: 45
+knnvals: 0.1
+knn_mult: 0.95

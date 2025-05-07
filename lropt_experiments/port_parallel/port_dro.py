@@ -158,10 +158,10 @@ if __name__ == "__main__":
     # arguments = parser.parse_args()
     seed_list = [0,0,0]
     n_list = [10,20,30]
-    R = 5
+    R = 1
     initseed = seed_list[idx]
     n = n_list[idx]
-    N = 500
+    N = 2000
     num_context = 20
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)
