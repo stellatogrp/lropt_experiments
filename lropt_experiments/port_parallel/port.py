@@ -80,7 +80,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         data_gen = False
         while not data_gen:
             try: 
-                data = gen_demand_varied(sig,mu,orig_mu,N,seed=seed)
+                data = gen_demand_varied(sig,mu,orig_mu,N,seed=finseed)
                 train = data[train_indices]
                 init = sc.linalg.sqrtm(np.cov(train.T))
                 init_bval = np.mean(train, axis=0)

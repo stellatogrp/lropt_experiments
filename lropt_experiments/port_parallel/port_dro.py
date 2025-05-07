@@ -79,7 +79,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     data_gen = False
     while not data_gen:
         try: 
-            data = gen_demand_varied(sig,mu,orig_mu,N,seed=seed)
+            data = gen_demand_varied(sig,mu,orig_mu,N,seed=finseed)
             train = data[train_indices]
             init = sc.linalg.sqrtm(np.cov(train.T))
             init_bval = np.mean(train, axis=0)
@@ -87,9 +87,10 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             finseed += 1
         else: 
             data_gen = True
+    # seed = idx
 
     u = lropt.UncertainParameter(n,
-                            uncertainty_set=lropt.MRO(K=cfg.Kval, p=2, data=train, train=True))
+                            uncertainty_set=lropt.MRO(K=cfg.Kval, p=2, data=data, train_data=train, train=True))
     # Formulate the Robust Problem
     x = cp.Variable(n)
     t = cp.Variable()
@@ -156,12 +157,13 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    seed_list = [0,0,0]
-    n_list = [10,20,30]
+    seed_list = [0,10,20,30,40,50,60,70,80,90]
+    n_list = [30,30,30,30,30,30,30,30,30,30]
     R = 10
     initseed = seed_list[idx]
-    n = n_list[idx]
-    N = 500
+    n = 20
+    # n_list[idx]
+    N = 2000
     num_context = 20
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)
@@ -179,7 +181,7 @@ if __name__ == "__main__":
     for j in range(num_context):
       context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
       test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
-    eps_list=np.linspace(1, 20, 60)
-    eps_list_train = np.linspace(0.00001, 10, 120)
+    eps_list=np.linspace(0.5, 3, 60)
+    eps_list_train = np.linspace(0.5, 10, 120)
     main_func()
 
