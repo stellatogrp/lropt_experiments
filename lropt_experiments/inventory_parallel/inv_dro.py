@@ -176,7 +176,7 @@ if __name__ == "__main__":
     seed_list = [0,10,20,30,40]
     N_list = [1000,1000,1000,1000,1000]
     # contxtual = [T,T,F,T,T,T]
-    R = 10
+    R = 5
     initseed = seed_list[idx]
     test_p = 0.5
     N = N_list[idx]

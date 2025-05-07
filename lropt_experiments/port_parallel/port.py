@@ -265,17 +265,6 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_pretrained_grid.csv')
             torch.save(result2._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'pretrained_linear.pth')
 
-            # # untrained covpred
-            # settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 100,knn_cov = True, n_neighbors=90,knn_scale = 1)
-            # settings.num_iter = 1
-            # resultcov = trainer.train(settings=settings)
-            # A_fincov = resultcov.A
-            # b_fincov = resultcov.b
-            # result_grid5 = trainer.grid(rholst=eps_list_train,init_A=A_fincov, init_b=b_fincov, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = resultcov._predictor)
-            # dfgrid5 = result_grid5.df
-            # dfgrid5 = dfgrid5.drop(columns=["z_vals","x_vals"])
-            # dfgrid5.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_cov_pretrained_grid.csv')
-            # torch.save(resultcov._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'pretrained_linear_cov.pth')
 
         try:
             plot_iters(result.df,result.df_validate, steps=num_iters, title="training_"+str(cfg.eta),kappa=settings.kappa)
@@ -348,7 +337,7 @@ if __name__ == "__main__":
     R = 10
     initseed = seed_list[idx]
     n = n_list[idx]
-    N = 2000
+    N = 1000
     num_context = 20
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)

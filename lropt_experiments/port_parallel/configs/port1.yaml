@@ -38,7 +38,7 @@ validate_percentage: 0.2
 test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
-nval: 30
+nval: 10
 Rval: 10
 seedvals: 0
 knnnum: 0.1
