@@ -26,6 +26,7 @@ objs = [ 0.5,0.75,1,1.2,1.5]
 seeds1 = [0,10,20,30,40,50,60,70,80,90]
 foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-05-04/1.2/"
 foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-05-04/1.3/"
+foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-05-04/1.4/"
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
