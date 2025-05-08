@@ -73,7 +73,7 @@ def calc_eval(u,r,y,Y,t,h,d,s,L):
         vio += (sum >= 0.0001)
     return val/u.shape[0], vio/u.shape[0]
 
-def inv_exp(cfg,hydra_out_dir,seed):
+def inv_exp(cfg,hydra_out_dir,seed,idxx):
     finseed = initseed + 10*seed
     print(finseed)
     data_gen = False
@@ -87,9 +87,10 @@ def inv_exp(cfg,hydra_out_dir,seed):
             finseed += 1
         else: 
             data_gen = True
+    seed = idxx
 
     u = lropt.UncertainParameter(n,
-                                    uncertainty_set = lropt.MRO(K=cfg.mroK, p=2, data=train, train=True))
+                                    uncertainty_set = lropt.MRO(K=cfg.mroK, p=2, data=data, train_data = train, train=True))
     # formulate cvxpy variable
     L = cp.Variable()
     s = cp.Variable(n)
@@ -159,7 +160,7 @@ def main_func(cfg):
     # print(f"Current working directory: {os.getcwd()}")
     njobs = get_n_processes(30)
     Parallel(n_jobs=njobs)(
-        delayed(inv_exp)(cfg,hydra_out_dir,r) for r in range(R))
+        delayed(inv_exp)(cfg,hydra_out_dir,r,idx) for r in range(R))
     # for r in range(R):
     #     portfolio_exp(cfg,hydra_out_dir,r)
     
@@ -173,14 +174,11 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    seed_list = [0,10,20,30,40,50]
-    N_list = [200,1000,1000,1000,1000,1000]
-    # contxtual = [T,T,F,T,T,T]
-    R = 5
+    seed_list = [0,10,20,30,40,50,60,70,80,90]
+    R = 1
     initseed = seed_list[idx]
     test_p = 0.5
-    N = N_list[idx]
-    #1000
+    N = 1000
     n = 10
     m = 4
     #m_list[idx]
@@ -211,7 +209,7 @@ if __name__ == "__main__":
     for j in range(num_context):
         context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
         test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
-    eps_list=np.linspace(0.1, 6, 50)
+    eps_list=np.linspace(0.1, 6, 60)
     eps_list_train = np.linspace(1, 9, 90)
     main_func()
 

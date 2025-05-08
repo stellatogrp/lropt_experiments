@@ -28,9 +28,10 @@ serial: false
 n_val: 10
 m_val: 4
 sigmult: 0.3
-epsrange: 0.146
-initseedval: 10
+epsrange: 0.166
+initseedval: 0
 Nval: 1000
 addval: 0.0
 Rvals: 5
-mroK: 50
+mroK: 30
+initval: eye

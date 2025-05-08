@@ -112,13 +112,15 @@ hydra:
   output_subdir: .hydra
   overrides:
     hydra: []
-    task: []
+    task:
+    - eta=0.1
+    - obj_scale=0.5
   job:
     name: inv_dro
     chdir: true
-    override_dirname: ''
-    id: ???
-    num: ???
+    override_dirname: eta=0.1,obj_scale=0.5
+    id: '0'
+    num: 0
     config_name: inv_dro.yaml
     env_set: {}
     env_copy: []
@@ -141,7 +143,7 @@ hydra:
     - path: ''
       schema: structured
       provider: schema
-    output_dir: ???
+    output_dir: /scratch/gpfs/iywang/lropt_revision/lropt_experiments/multirun/2025-05-07/20-04-31/0
     choices:
       hydra/env: default
       hydra/callbacks: null
@@ -153,39 +155,3 @@ hydra:
       hydra/launcher: basic
       hydra/output: default
   verbose: false
-eta: 0.01
-obj_scale: 1
-seed: 0
-lr: 0.0005
-num_iter: 1
-optimizer: SGD
-init_rho: 1
-init_lam: 2
-init_mu: 2
-mu_multiplier: 1.02
-test_percentage: 0.5
-save_history: false
-lr_step_size: 20
-lr_gamma: 0.5
-random_init: false
-parallel: false
-kappa: 0
-contextual: true
-max_iter_line_search: 50
-line_search: true
-max_batch_size: 30
-batch_percentage: 0.2
-validate_percentage: 0.2
-test_frequency: 5000
-validate_frequency: 2000
-initialize_predictor: true
-serial: false
-n_val: 10
-m_val: 4
-sigmult: 0.3
-epsrange: 0.146
-initseedval: 10
-Nval: 1000
-addval: 0.0
-Rvals: 5
-mroK: 50
