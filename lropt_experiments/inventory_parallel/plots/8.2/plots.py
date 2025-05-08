@@ -31,7 +31,9 @@ foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/in
 foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-06/2/"
 # foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-04/1/"
 # foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-04/1/"
-foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/DRO/mro_50/"
+foldernamedro1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/MRO/60.1/"
+foldernamedro2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/MRO/60.2/"
+
 foldername21 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-06/1.1/"
 foldername41 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-06/2.1/"
 
@@ -143,11 +145,19 @@ df_nonrob = pd.concat(df_nonrob)
 
 df_dro = []
 running_ind = 0
-newfolder = foldername2+str(running_ind)
+newfolder = foldernamedro1+str(running_ind)
 for seed in range(R):
     try:
         df = pd.read_csv(newfolder+'/'+str(seed)+"_dro_grid.csv")
         df['seed'] = seeds1[seed]
+        df_dro.append(df)
+    except:
+        print(3,eta,obj,seed)
+newfolder = foldernamedro2+str(running_ind)
+for seed in range(R):
+    try:
+        df = pd.read_csv(newfolder+'/'+str(seed)+"_dro_grid.csv")
+        df['seed'] = seeds2[seed]
         df_dro.append(df)
     except:
         print(3,eta,obj,seed)
@@ -275,10 +285,11 @@ for target in target_list:
         except:
             print(seed)
     dfs_best_pre[target] = pd.concat(dfs_best_pre[target])  
+dif = 0.01
 dfs_best_dro = {}
 for target in target_list:
     dfs_best_dro[target] = []
-    for seed in seeds1:
+    for seed in seeds1+seeds2:
         try:
             curdif = dif
             mindif = np.min(abs(df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target))
@@ -325,6 +336,9 @@ def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=None):
 
     plt.plot(np.array(plot_data["pre_prob"]),np.array(plot_data["pre_obj"]), label = "Pretrained test" ,color = "tab:green",marker = "v")
     plt.fill_between(np.array(plot_data["pre_prob"]),np.array(plot_data["0.25_pre_obj"]),np.array(plot_data["0.75_pre_obj"]),alpha = 0.25, color = "tab:green")
+
+    plt.plot(np.array(plot_data["dro_prob"]),np.array(plot_data["dro_obj"]), label = "DRO test" ,color = "tab:olive",marker = "v")
+    plt.fill_between(np.array(plot_data["dro_prob"]),np.array(plot_data["0.25_dro_obj"]),np.array(plot_data["0.75_dro_obj"]),alpha = 0.25, color = "tab:olive")
         
     # plt.scatter(df_nonrob["nonrob_prob"].mean(),df_nonrob["nonrob_obj"].mean(),color = "tab:pink",marker = "s")
     # plt.fill_between(np.array(dfs[idx]["mean_nonrob_prob"])[1:],np.array(dfs[idx]["0.25_nonrob_obj"])[1:],np.array(dfs[idx]["0.75_nonrob_obj"])[1:],alpha = 0.25,color = "tab:pink")
@@ -336,8 +350,9 @@ def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=None):
     plt.xlabel("Probability of constraint violation")
     # plt.ylabel("Out-of-sample objective")
     plt.ylim(ylim)
+    # ylim=[-412,-385]
     plt.tight_layout()
     # plt.xlim([-0.02,0.20])
     plt.title("Out-of-sample objectives (test set)")
     plt.savefig(path+"Test_objectives_best_all.pdf",bbox_inches = "tight")
-plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=[-412,-385])
+plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid)

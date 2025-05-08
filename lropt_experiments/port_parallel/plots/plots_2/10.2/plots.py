@@ -24,8 +24,8 @@ R = 10
 etas = [0.15,0.20,0.23,0.25,0.30,0.33,0.35,0.40,0.45]
 objs = [ 0.5,0.75,1,1.2,1.5]
 seeds1 = [0,10,20,30,40,50,60,70,80,90]
-foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-05-05/10_2/"
-foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-05-04/4.4/"
+foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-05-06/10_1000/"
+foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/MRO/10_1000/"
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
@@ -97,9 +97,21 @@ for q in quantiles:
     quantile_values = grouped[collist_grid].quantile(q).add_prefix(str(q)+"_")
     dfs_mv_grid = pd.concat([dfs_mv_grid, quantile_values], axis=1)
 dfs_mv_grid.to_csv(path+"pretrained.csv")
+df_dro = []
+running_ind = 0
+newfolder = foldername3+str(running_ind)
+for seed in range(R):
+    try:
+        df = pd.read_csv(newfolder+'/'+str(seed)+"_dro_grid.csv")
+        df['seed'] = seeds1[seed]
+        df_dro.append(df)
+    except:
+        print(3,eta,obj,seed)
+df_dro = pd.concat(df_dro)
+
+df_nonrob = []
 running_ind = 0
 newfolder = foldername1+str(running_ind)
-df_nonrob = []
 for seed in range(R):
     try:
         df = pd.read_csv(newfolder+'/'+str(seed)+"_vals_nonrob.csv")
@@ -168,7 +180,7 @@ for eta in etas:
 dfs_cat = pd.concat(dfs_cat)
 inds = {}
 #target_list = [0.01,0.05,0.1,0.15,0.20]
-target_list = [0.01,0.02,0.03,0.04,0.05,0.08,0.09,0.1,0.12,0.14,0.15,0.18,0.20]
+target_list = [0.01,0.02,0.03,0.05,0.08,0.1,0.12,0.15,0.18,0.20]
 dfs_best = {}
 dif=0.01
 curdif = dif
@@ -223,9 +235,25 @@ for target in target_list:
         except:
             print(seed)
     dfs_best_pre[target] = pd.concat(dfs_best_pre[target])  
+
+dfs_best_dro = {}
+for target in target_list:
+    dfs_best_dro[target] = []
+    for seed in seeds1:
+        try:
+            curdif = dif
+            mindif = np.min(abs(df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target))
+            if mindif >= dif:
+                curdif = mindif
+            best_idx = np.argmin(df_dro[df_dro["seed"] == seed][abs(df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target)<=curdif]["Validate_val"])
+            cur_df = df_dro[df_dro["seed"] == seed][abs(df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            dfs_best_dro[target].append(cur_df)
+        except:
+            print(seed)
+    dfs_best_dro[target] = pd.concat(dfs_best_dro[target])  
 plot_data = []
 for target in target_list:
-    data = {'target':target,'test_prob': dfs_best[target]["test_prob"].mean(),'test_obj': dfs_best[target]["test_obj"].mean(),'0.25_test_obj': dfs_best[target]["test_obj"].quantile(0.25), '0.75_test_obj': dfs_best[target]["test_obj"].quantile(0.75),'mv_prob': dfs_best_mv[target]["Avg_prob_test"].mean(),'mv_obj':dfs_best_mv[target]["Test_val"].mean(), '0.25_mv_obj':dfs_best_mv[target]["Test_val"].quantile(0.25),  '0.75_mv_obj':dfs_best_mv[target]["Test_val"].quantile(0.75),'pre_prob': dfs_best_pre[target]["Avg_prob_test"].mean(),'pre_obj':dfs_best_pre[target]["Test_val"].mean(), '0.25_pre_obj':dfs_best_pre[target]["Test_val"].quantile(0.25),  '0.75_pre_obj':dfs_best_pre[target]["Test_val"].quantile(0.75),"nonrob_prob":df_nonrob["nonrob_prob"].mean(), "nonrob_obj": df_nonrob["nonrob_obj"].mean(), "scenario_prob":df_nonrob["scenario_probs"].mean(), "scenario_obj": df_nonrob["scenario_obj"].mean(),'0.25_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.25),  '0.75_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.75), '0.25_scenario_obj':df_nonrob["scenario_obj"].quantile(0.25),  '0.75_scenario_obj':df_nonrob["scenario_obj"].quantile(0.75)}
+    data = {'target':target,'test_prob': dfs_best[target]["test_prob"].mean(),'test_obj': dfs_best[target]["test_obj"].mean(),'0.25_test_obj': dfs_best[target]["test_obj"].quantile(0.25), '0.75_test_obj': dfs_best[target]["test_obj"].quantile(0.75),'mv_prob': dfs_best_mv[target]["Avg_prob_test"].mean(),'mv_obj':dfs_best_mv[target]["Test_val"].mean(), '0.25_mv_obj':dfs_best_mv[target]["Test_val"].quantile(0.25),  '0.75_mv_obj':dfs_best_mv[target]["Test_val"].quantile(0.75),'pre_prob': dfs_best_pre[target]["Avg_prob_test"].mean(),'pre_obj':dfs_best_pre[target]["Test_val"].mean(), '0.25_pre_obj':dfs_best_pre[target]["Test_val"].quantile(0.25),  '0.75_pre_obj':dfs_best_pre[target]["Test_val"].quantile(0.75),'dro_prob': dfs_best_dro[target]["Avg_prob_test"].mean(),'dro_obj':dfs_best_dro[target]["Test_val"].mean(), '0.25_dro_obj':dfs_best_dro[target]["Test_val"].quantile(0.25),  '0.75_dro_obj':dfs_best_dro[target]["Test_val"].quantile(0.75),"nonrob_prob":df_nonrob["nonrob_prob"].mean(), "nonrob_obj": df_nonrob["nonrob_obj"].mean(), "scenario_prob":df_nonrob["scenario_probs"].mean(), "scenario_obj": df_nonrob["scenario_obj"].mean(),'0.25_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.25),  '0.75_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.75), '0.25_scenario_obj':df_nonrob["scenario_obj"].quantile(0.25),  '0.75_scenario_obj':df_nonrob["scenario_obj"].quantile(0.75)}
     data = pd.DataFrame(data, index=[0])
     plot_data.append(data)
 plot_data = pd.concat(plot_data)
@@ -249,7 +277,10 @@ def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=None):
 
     plt.plot(np.array(plot_data["pre_prob"]),np.array(plot_data["pre_obj"]), label = "Pretrained test" ,color = "tab:green",marker = "v")
     plt.fill_between(np.array(plot_data["pre_prob"]),np.array(plot_data["0.25_pre_obj"]),np.array(plot_data["0.75_pre_obj"]),alpha = 0.25, color = "tab:green")
-        
+    
+    plt.plot(np.array(plot_data["dro_prob"]),np.array(plot_data["dro_obj"]), label = "DRO test" ,color = "tab:olive",marker = "v")
+    plt.fill_between(np.array(plot_data["dro_prob"]),np.array(plot_data["0.25_dro_obj"]),np.array(plot_data["0.75_dro_obj"]),alpha = 0.25, color = "tab:olive")
+
     plt.scatter(df_nonrob["nonrob_prob"].mean(),df_nonrob["nonrob_obj"].mean(),color = "tab:pink",marker = "s")
     # plt.fill_between(np.array(dfs[idx]["mean_nonrob_prob"])[1:],np.array(dfs[idx]["0.25_nonrob_obj"])[1:],np.array(dfs[idx]["0.75_nonrob_obj"])[1:],alpha = 0.25,color = "tab:pink")
     plt.plot(df_nonrob["scenario_probs"].mean(),df_nonrob["scenario_obj"].mean(),label = "Scenario",color = "tab:purple",marker = "o")

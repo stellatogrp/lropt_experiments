@@ -19,13 +19,15 @@ plt.rcParams.update({
     "font.size":18,
     "font.family": "serif"
 })
-path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/port_parallel/plots/plots_2/20.1/"
+path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/port_parallel/plots/plots_2/30.1/"
 R = 10
 etas = [0.15,0.20,0.23,0.25,0.30,0.33,0.35,0.40,0.45]
 objs = [ 0.5,0.75,1,1.2,1.5]
 seeds1 = [0,10,20,30,40,50,60,70,80,90]
-foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-05-05/20_1/"
-foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/MRO/20_2000/"
+foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-05-04/4.2/"
+# foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/MRO/30_2000/"
+foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/DRO/30_2000/"
+foldername4="/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-05-06/30_mv/"
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
@@ -57,7 +59,7 @@ for obj in objs:
     dfs[obj].to_csv(path+"gamma_"+str(obj)+"_values.csv")
 df_pre = []
 running_ind = 0
-newfolder = foldername1+str(running_ind)
+newfolder = foldername4+str(running_ind)
 for seed in range(R):
     try:
         df = pd.read_csv(newfolder+'/'+str(seed)+"_linear_pretrained_grid.csv")
@@ -78,7 +80,7 @@ for q in quantiles:
 dfs_grid.to_csv(path+"pretrained.csv")
 df_mv = []
 running_ind = 0
-newfolder = foldername1+str(running_ind)
+newfolder = foldername4+str(running_ind)
 for seed in range(R):
     try:
         df = pd.read_csv(newfolder+'/'+str(seed)+"_mean_var_grid.csv")
@@ -111,7 +113,7 @@ df_dro = pd.concat(df_dro)
 
 df_nonrob = []
 running_ind = 0
-newfolder = foldername1+str(running_ind)
+newfolder = foldername4+str(running_ind)
 for seed in range(R):
     try:
         df = pd.read_csv(newfolder+'/'+str(seed)+"_vals_nonrob.csv")
@@ -296,4 +298,4 @@ def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=None):
     # plt.xlim([-0.02,0.20])
     plt.title("Out-of-sample objectives (test set)")
     plt.savefig(path+"Test_objectives_best_all_new.pdf",bbox_inches='tight')
-plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid)
+plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=[-0.88,-0.81])
