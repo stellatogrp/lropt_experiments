@@ -23,11 +23,15 @@ path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_exp
 R = 10
 etas = [0.15,0.20,0.23,0.25,0.30,0.33,0.35,0.40,0.45]
 objs = [ 0.5,0.75,1,1.2,1.5]
+etas1 = [0.1,0.15,0.2,0.3,0.4]
+objs1 = [0.9,0.8,0.6,0.4,0.2,0.1]
 seeds1 = [0,10,20,30,40,50,60,70,80,90]
 foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-05-04/4.2/"
+foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/Adam/30_2000/"
 # foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/MRO/30_2000/"
 foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/DRO/30_2000/"
 foldername4="/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-05-06/30_mv/"
+foldername5 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/Delage/30_2000/"
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
@@ -180,6 +184,19 @@ for eta in etas:
                 print(4,eta,obj,seed)
         running_ind += 1
 dfs_cat = pd.concat(dfs_cat)
+dfs_cat_o = []
+running_ind = 0
+for eta in etas1:
+    for obj in objs1:
+        newfolder = foldername5+str(running_ind)
+        for seed in range(R):
+            try:
+                df = pd.read_csv(newfolder+'/'+str(seed)+"_vals.csv")
+                dfs_cat_o.append(df)
+            except:
+                print(4,eta,obj,seed)
+        running_ind += 1
+dfs_cat_o = pd.concat(dfs_cat_o)
 inds = {}
 #target_list = [0.01,0.05,0.1,0.15,0.20]
 target_list = [0.01,0.02,0.03,0.05,0.08,0.1,0.12,0.15,0.18,0.20]
@@ -207,6 +224,26 @@ for target in target_list:
         except:
             print(seed)
     dfs_best[target] = pd.concat(dfs_best[target])   
+dfs_best_o = {}
+dif=0.01
+curdif = dif
+for target in target_list:
+    inds[target] = []
+    dfs_best_o[target] = []
+    for seed in seeds1:
+        try:
+            curdif = dif
+            mindif = np.min(abs(dfs_cat_o[dfs_cat_o["seed"] == seed]["valid_prob"] - target))
+            if mindif >= dif:
+                curdif = mindif
+                print(curdif)
+            best_idx = np.argmin(dfs_cat_o[dfs_cat_o["seed"] == seed][abs(dfs_cat_o[dfs_cat_o["seed"] == seed]["valid_prob"] - target)<=curdif]["valid_obj"])
+            inds[target].append(best_idx)
+            cur_df = dfs_cat_o[dfs_cat_o["seed"] == seed][abs(dfs_cat_o[dfs_cat_o["seed"] == seed]["valid_prob"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            dfs_best_o[target].append(cur_df)
+        except:
+            print(seed)
+    dfs_best_o[target] = pd.concat(dfs_best_o[target])   
 dfs_best_mv = {}
 for target in target_list:
     dfs_best_mv[target] = []
@@ -253,9 +290,10 @@ for target in target_list:
         except:
             print(seed)
     dfs_best_dro[target] = pd.concat(dfs_best_dro[target])  
+
 plot_data = []
 for target in target_list:
-    data = {'target':target,'test_prob': dfs_best[target]["test_prob"].mean(),'test_obj': dfs_best[target]["test_obj"].mean(),'0.25_test_obj': dfs_best[target]["test_obj"].quantile(0.25), '0.75_test_obj': dfs_best[target]["test_obj"].quantile(0.75),'mv_prob': dfs_best_mv[target]["Avg_prob_test"].mean(),'mv_obj':dfs_best_mv[target]["Test_val"].mean(), '0.25_mv_obj':dfs_best_mv[target]["Test_val"].quantile(0.25),  '0.75_mv_obj':dfs_best_mv[target]["Test_val"].quantile(0.75),'pre_prob': dfs_best_pre[target]["Avg_prob_test"].mean(),'pre_obj':dfs_best_pre[target]["Test_val"].mean(), '0.25_pre_obj':dfs_best_pre[target]["Test_val"].quantile(0.25),  '0.75_pre_obj':dfs_best_pre[target]["Test_val"].quantile(0.75),'dro_prob': dfs_best_dro[target]["Avg_prob_test"].mean(),'dro_obj':dfs_best_dro[target]["Test_val"].mean(), '0.25_dro_obj':dfs_best_dro[target]["Test_val"].quantile(0.25),  '0.75_dro_obj':dfs_best_dro[target]["Test_val"].quantile(0.75),"nonrob_prob":df_nonrob["nonrob_prob"].mean(), "nonrob_obj": df_nonrob["nonrob_obj"].mean(), "scenario_prob":df_nonrob["scenario_probs"].mean(), "scenario_obj": df_nonrob["scenario_obj"].mean(),'0.25_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.25),  '0.75_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.75), '0.25_scenario_obj':df_nonrob["scenario_obj"].quantile(0.25),  '0.75_scenario_obj':df_nonrob["scenario_obj"].quantile(0.75)}
+    data = {'target':target,'test_prob': dfs_best[target]["test_prob"].mean(),'test_obj': dfs_best[target]["test_obj"].mean(),'0.25_test_obj': dfs_best[target]["test_obj"].quantile(0.25), '0.75_test_obj': dfs_best[target]["test_obj"].quantile(0.75),'test_prob_o': dfs_best_o[target]["test_prob"].mean(),'test_obj_o': dfs_best_o[target]["test_obj"].mean(),'0.25_test_obj_o': dfs_best_o[target]["test_obj"].quantile(0.25), '0.75_test_obj_o': dfs_best_o[target]["test_obj"].quantile(0.75),'mv_prob': dfs_best_mv[target]["Avg_prob_test"].mean(),'mv_obj':dfs_best_mv[target]["Test_val"].mean(), '0.25_mv_obj':dfs_best_mv[target]["Test_val"].quantile(0.25),  '0.75_mv_obj':dfs_best_mv[target]["Test_val"].quantile(0.75),'pre_prob': dfs_best_pre[target]["Avg_prob_test"].mean(),'pre_obj':dfs_best_pre[target]["Test_val"].mean(), '0.25_pre_obj':dfs_best_pre[target]["Test_val"].quantile(0.25),  '0.75_pre_obj':dfs_best_pre[target]["Test_val"].quantile(0.75),'dro_prob': dfs_best_dro[target]["Avg_prob_test"].mean(),'dro_obj':dfs_best_dro[target]["Test_val"].mean(), '0.25_dro_obj':dfs_best_dro[target]["Test_val"].quantile(0.25),  '0.75_dro_obj':dfs_best_dro[target]["Test_val"].quantile(0.75),"nonrob_prob":df_nonrob["nonrob_prob"].mean(), "nonrob_obj": df_nonrob["nonrob_obj"].mean(), "scenario_prob":df_nonrob["scenario_probs"].mean(), "scenario_obj": df_nonrob["scenario_obj"].mean(),'0.25_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.25),  '0.75_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.75), '0.25_scenario_obj':df_nonrob["scenario_obj"].quantile(0.25),  '0.75_scenario_obj':df_nonrob["scenario_obj"].quantile(0.75)}
     data = pd.DataFrame(data, index=[0])
     plot_data.append(data)
 plot_data = pd.concat(plot_data)
@@ -276,6 +314,9 @@ def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=None):
     
     plt.plot(np.array(plot_data["test_prob"]),np.array(plot_data["test_obj"]), label = "Trained test" ,color = "tab:orange",marker = "D")
     plt.fill_between(np.array(plot_data["test_prob"]),np.array(plot_data["0.25_test_obj"]),np.array(plot_data["0.75_test_obj"]),alpha = 0.25, color = "tab:orange")
+
+    plt.plot(np.array(plot_data["test_prob_o"]),np.array(plot_data["test_obj_o"]), label = "Trained test delage" ,color = "tab:brown",marker = "D")
+    plt.fill_between(np.array(plot_data["test_prob_o"]),np.array(plot_data["0.25_test_obj_o"]),np.array(plot_data["0.75_test_obj_o"]),alpha = 0.25, color = "tab:brown")
 
     plt.plot(np.array(plot_data["pre_prob"]),np.array(plot_data["pre_obj"]), label = "Pretrained test" ,color = "tab:green",marker = "v")
     plt.fill_between(np.array(plot_data["pre_prob"]),np.array(plot_data["0.25_pre_obj"]),np.array(plot_data["0.75_pre_obj"]),alpha = 0.25, color = "tab:green")
@@ -298,4 +339,4 @@ def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=None):
     # plt.xlim([-0.02,0.20])
     plt.title("Out-of-sample objectives (test set)")
     plt.savefig(path+"Test_objectives_best_all_new.pdf",bbox_inches='tight')
-plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=[-0.88,-0.81])
+plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=[-0.95,-0.81])
