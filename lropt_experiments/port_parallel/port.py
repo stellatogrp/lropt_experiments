@@ -187,6 +187,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     # settings.predictor = lropt.DeepNormalModel()
     settings.data = data
     settings.cost_func = True
+    settings.use_eval = cfg.use_eval
     print("training start")
     result = trainer.train(settings=settings)
     df = result.df
@@ -337,7 +338,7 @@ if __name__ == "__main__":
     R = 10
     initseed = seed_list[idx]
     n = n_list[idx]
-    N = 1000
+    N = 2000
     num_context = 20
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)
@@ -355,7 +356,7 @@ if __name__ == "__main__":
     for j in range(num_context):
       context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
       test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
-    eps_list= np.concat([np.logspace(-4,-1,15),np.linspace(0.11,7,45)])
+    eps_list= np.concat([np.logspace(-4,-1,10),np.linspace(0.11,1,25),np.linspace(1.1,7,40)])
     # np.linspace(0.5, 3, 60)
     eps_list_train = np.linspace(0.5, 10, 120)
     main_func()

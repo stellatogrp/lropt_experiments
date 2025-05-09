@@ -56,7 +56,7 @@ def gen_demand_varied(sig,mu,d,N,seed=399):
     pointlist = []
     np.random.seed(seed)
     for i in range(N):
-        d_train = np.random.multivariate_normal(d - 0.1*mu[i],sig[i]+0.1*np.eye(d.shape[0]))
+        d_train = np.random.multivariate_normal(d - 0.1*mu[i],sig[i]+0.0*np.eye(d.shape[0]))
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
@@ -89,7 +89,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
             else: 
                 data_gen = True
 
-        if cfg.eta == 0.10 and cfg.obj_scale==0.5:
+        if cfg.eta == 1 and cfg.obj_scale==0.5:
             context_evals = 0
             context_probs = 0
             for j in range(num_context):
@@ -225,6 +225,8 @@ def inv_exp(cfg,hydra_out_dir,seed):
         settings.num_iter = cfg.num_iter
         settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 100)
         settings.data=data
+        settings.cost_func = True
+        settings.use_eval = cfg.use_eval
         try: 
             result = trainer.train(settings=settings)
             df = result.df
@@ -253,7 +255,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
         except:
             print("compare failed")
 
-        if cfg.eta == 0.10 and cfg.obj_scale==0.5:
+        if cfg.eta == 1 and cfg.obj_scale==0.5:
             settings.init_rho = cfg.init_rho
             settings.num_iter = 1
             settings.initialize_predictor = True
@@ -286,7 +288,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
         beg2, end2 = 0, 100
         plt.figure(figsize=(15, 4))
         
-        if cfg.eta == 0.10 and cfg.obj_scale==0.5:
+        if cfg.eta == 1 and cfg.obj_scale==0.5:
             plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
                 dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
             plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
