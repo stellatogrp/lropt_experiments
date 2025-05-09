@@ -8,7 +8,7 @@
 #SBATCH -o /scratch/gpfs/iywang/lropt_revision/output/portfolio/portfolio_test_%A_.txt
 #SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT
 #SBATCH --mail-user=iabirina@hotmail.com
-#SBATCH --array=0        # job array
+#SBATCH --array=2        # job array
 
 module purge
 module load anaconda3/2023.9
