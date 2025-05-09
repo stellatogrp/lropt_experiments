@@ -45,7 +45,7 @@ gridalso: False
 pretrain: True
 initseedval: 50
 Nval: 1000
-epslimtrain: 1990
-addval: 0
+epslimtrain: 1450
+addval: 0.1
 Rvals: 5
 knnvals: 30

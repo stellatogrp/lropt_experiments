@@ -56,7 +56,7 @@ def gen_demand_varied(sig,mu,d,N,seed=399):
     pointlist = []
     np.random.seed(seed)
     for i in range(N):
-        d_train = np.random.multivariate_normal(d - 0.1*mu[i],sig[i]+0.0*np.eye(d.shape[0]))
+        d_train = np.random.multivariate_normal(d - 0.1*mu[i],sig[i]+0.1*np.eye(d.shape[0]))
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
@@ -122,7 +122,7 @@ def inv_exp(cfg,hydra_out_dir,seed,idxx):
         trainer = lropt.Trainer(prob)
         settings = lropt.TrainerSettings()
         settings.data = data
-        result_grid = trainer.grid(rholst=eps_list, init_A=np.eye(n),
+        result_grid = trainer.grid(rholst=eps_list_train, init_A=np.eye(n),
                             init_b=np.zeros(n), seed=5,
                             init_alpha=0., test_percentage=cfg.test_percentage, validate_percentage = cfg.validate_percentage, quantiles = (0.3, 0.7),settings = settings)
         dfgrid = result_grid.df
@@ -210,6 +210,6 @@ if __name__ == "__main__":
         context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
         test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
     eps_list=np.linspace(0.1, 3, 50)
-    eps_list_train = np.linspace(1, 9, 90)
+    eps_list_train = np.linspace(0.1, 4, 50)
     main_func()
 

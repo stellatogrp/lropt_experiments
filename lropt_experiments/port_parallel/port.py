@@ -76,206 +76,207 @@ def calc_eval(x,t,u):
 def portfolio_exp(cfg,hydra_out_dir,seed):
     finseed = initseed + 10*seed
     print(finseed)
-    try: 
-        data_gen = False
-        while not data_gen:
-            try: 
-                data = gen_demand_varied(sig,mu,orig_mu,N,seed=finseed)
-                train = data[train_indices]
-                init = sc.linalg.sqrtm(np.cov(train.T))
-                init_bval = np.mean(train, axis=0)
-            except Exception as e:
-                finseed += 1
-            else: 
-                data_gen = True
-
-        if cfg.eta == 0.05 and cfg.obj_scale==0.5:
-            context_evals = 0
-            context_probs = 0
-            for j in range(num_context):
-                u = lropt.UncertainParameter(n,
-                                        uncertainty_set=lropt.Scenario(
-                                                                    data=data[context_inds[j]]))
-                # Formulate the Robust Problem
-                x_s = cp.Variable(n)
-                t_s = cp.Variable()
-
-                objective = cp.Minimize(t_s)
-                constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
-                prob_context = lropt.RobustProblem(objective, constraints)
-                prob_context.solve()
-                eval, prob_vio = calc_eval(x_s.value, t_s.value,data[test_inds[j]])
-                context_evals += eval
-                context_probs += prob_vio
-            context_evals = context_evals/num_context
-            context_probs = context_probs/num_context
-
-            nonrob_evals = 0
-            nonrob_probs = 0
-            for j in range(num_context):
-                u = lropt.UncertainParameter(n,
-                                        uncertainty_set=lropt.Scenario(
-                                                                    data=np.mean(data[context_inds[j]],axis=0).reshape(1,n)))
-                # Formulate the Robust Problem
-                x_s = cp.Variable(n)
-                t_s = cp.Variable()
-
-                objective = cp.Minimize(t_s)
-                constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
-                prob_nonrob = lropt.RobustProblem(objective, constraints)
-                prob_nonrob.solve()
-                eval, prob_vio = calc_eval(x_s.value, t_s.value,data[test_inds[j]])
-                nonrob_evals += eval
-                nonrob_probs += prob_vio
-            nonrob_evals = nonrob_evals / (num_context)
-            nonrob_probs = nonrob_probs / (num_context)
-
-            data_df = {'seed': initseed+10*seed, "a_seed":finseed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals}
-            single_row_df = pd.DataFrame(data_df, index=[0])
-            single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals_nonrob.csv",index=False)
-
-
-        u = lropt.UncertainParameter(n,
-                                uncertainty_set=lropt.Ellipsoidal(p=2,
-                                                            data=data))
-        # Formulate the Robust Problem
-        x = cp.Variable(n)
-        t = cp.Variable()
-        context_param = lropt.ContextParameter((n,2), data=context)
-        mu_param = lropt.ContextParameter(n, data=mu)
-
-        objective = cp.Minimize(t)
-        constraints = [-x@u <= t, cp.sum(x) == 1, x >= 0]
-        constraints += [context_param >= -1000, mu_param >= -1000]
-        eval_exp = -x @ u
-
-        prob = lropt.RobustProblem(objective, constraints, eval_exp=eval_exp)
-
-        # Train A and b
-        num_iters = cfg.num_iter
-        trainer = lropt.Trainer(prob)
-        settings = lropt.TrainerSettings()
-        settings.lr= cfg.lr
-        settings.optimizer=cfg.optimizer
-        settings.seed=5
-        settings.init_A= init
-        settings.init_b= init_bval
-        settings.init_rho = cfg.init_rho
-        settings.init_lam= cfg.init_lam
-        settings.init_mu= cfg.init_mu
-        settings.mu_multiplier= cfg.mu_multiplier
-        settings.test_percentage = cfg.test_percentage
-        settings.save_history = cfg.save_history
-        settings.lr_step_size = cfg.lr_step_size
-        settings.lr_gamma = cfg.lr_gamma
-        settings.random_init = cfg.random_init
-        settings.parallel = cfg.parallel
-        settings.kappa = cfg.kappa
-        settings.contextual = cfg.contextual
-        settings.batch_percentage = cfg.batch_percentage
-        settings.eta= cfg.eta
-        settings.obj_scale = cfg.obj_scale
-        settings.max_iter_line_search = cfg.max_iter_line_search
-        settings.line_search = cfg.line_search
-        settings.max_batch_size = cfg.max_batch_size
-        settings.batch_percentage = cfg.batch_percentage
-        settings.validate_percentage = cfg.validate_percentage
-        settings.test_frequency = cfg.test_frequency
-        settings.validate_frequency = cfg.validate_frequency
-        settings.initialize_predictor = cfg.initialize_predictor
-        settings.num_iter = cfg.num_iter
-        settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200)
-        settings.data = data
+    data_gen = False
+    while not data_gen:
         try: 
-            result = trainer.train(settings=settings)
-            df = result.df
-            A_fin = result.A
-            b_fin = result.b
-            torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_trained_linear.pth')
+            data = gen_demand_varied(sig,mu,orig_mu,N,seed=finseed)
+            train = data[train_indices]
+            init = sc.linalg.sqrtm(np.cov(train.T))
+            init_bval = np.mean(train, axis=0)
+        except Exception as e:
+            finseed += 1
+        else: 
+            data_gen = True
 
-            # result_grid4 = trainer.grid(rholst=[0.5,1,2],init_A=A_fin, init_b=b_fin, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result._predictor)
-            # dfgrid4 = result_grid4.df
-            # dfgrid4 = dfgrid4.drop(columns=["z_vals","x_vals"])
-            # dfgrid4.to_csv(hydra_out_dir+'/'+str(seed)+'_linear_trained_grid.csv')
-        except:
-            print("training failed ",finseed,cfg.eta,cfg.obj_scale)
-        
-        def plot_iters(dftrain,dftest, title, steps=2000, logscale=True,kappa=0):
-            plt.rcParams.update({
-                "text.usetex": True,
+    if cfg.eta == 1 and cfg.obj_scale==0.5:
+        context_evals = 0
+        context_probs = 0
+        for j in range(num_context):
+            u = lropt.UncertainParameter(n,
+                                    uncertainty_set=lropt.Scenario(
+                                                                data=data[context_inds[j]]))
+            # Formulate the Robust Problem
+            x_s = cp.Variable(n)
+            t_s = cp.Variable()
 
-                "font.size": 22,
-                "font.family": "serif"
-            })
-            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 3))
-            ax1.plot(dftrain["Violations_train"][:steps],
-                    label="In-sample empirical CVaR", linestyle="--")
-            ax1.plot(np.arange(0,num_iters, settings.validate_frequency),dftest["Violations_validate"][:steps],
-                    label="out-of-sample empirical CVaR", linestyle="--")
+            objective = cp.Minimize(t_s)
+            constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
+            prob_context = lropt.RobustProblem(objective, constraints)
+            prob_context.solve()
+            eval, prob_vio = calc_eval(x_s.value, t_s.value,data[test_inds[j]])
+            context_evals += eval
+            context_probs += prob_vio
+        context_evals = context_evals/num_context
+        context_probs = context_probs/num_context
 
-            ax1.set_xlabel("Iterations")
-            ax1.hlines(xmin=0, xmax=dftrain["Violations_train"][:steps].shape[0],
-                    y=kappa, linestyles="--", color="black", label=f"Target threshold: {kappa}")
-            ax1.legend()
-            ax2.plot(dftrain["Train_val"][:steps], label="In-sample objective value")
-            ax2.plot(np.arange(0,num_iters, settings.validate_frequency),dftest["Validate_val"][:steps], label="Out-of-sample objective value")
+        nonrob_evals = 0
+        nonrob_probs = 0
+        for j in range(num_context):
+            u = lropt.UncertainParameter(n,
+                                    uncertainty_set=lropt.Scenario(
+                                                                data=np.mean(data[context_inds[j]],axis=0).reshape(1,n)))
+            # Formulate the Robust Problem
+            x_s = cp.Variable(n)
+            t_s = cp.Variable()
 
-            ax2.set_xlabel("Iterations")
-            ax2.ticklabel_format(style="sci", axis='y',
-                                scilimits=(0, 0), useMathText=True)
-            ax2.legend()
-            if logscale:
-                ax1.set_xscale("log")
-                ax2.set_xscale("log")
-            plt.savefig(hydra_out_dir+'/'+str(seed)+'_'+title+"_iters.pdf", bbox_inches='tight')
-        try:
-            findfs = []
-            for rho in eps_list_train:
-                df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
-                data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
-                single_row_df = pd.DataFrame(data_df, index=[0])
-                findfs.append(single_row_df)
-            findfs = pd.concat(findfs)
-            findfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
-        except:
-            None
+            objective = cp.Minimize(t_s)
+            constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
+            prob_nonrob = lropt.RobustProblem(objective, constraints)
+            prob_nonrob.solve()
+            eval, prob_vio = calc_eval(x_s.value, t_s.value,data[test_inds[j]])
+            nonrob_evals += eval
+            nonrob_probs += prob_vio
+        nonrob_evals = nonrob_evals / (num_context)
+        nonrob_probs = nonrob_probs / (num_context)
 
-        if cfg.eta == 0.05 and cfg.obj_scale == 0.5:
-            settings.init_rho = cfg.init_rho
-            settings.num_iter = 1
-            settings.initialize_predictor = True
-            result_grid = trainer.grid(rholst=eps_list, init_A=init,
-                                init_b=init_bval, seed=5,
-                                init_alpha=0., test_percentage=test_p, quantiles = (0.3, 0.7),settings=settings)
-            dfgrid = result_grid.df
-            dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
-            dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'mean_var_grid.csv')
+        data_df = {'seed': initseed+10*seed, "a_seed":finseed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals}
+        single_row_df = pd.DataFrame(data_df, index=[0])
+        single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals_nonrob.csv",index=False)
 
 
-            # untrained linear
-            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
-            # settings.predictor = lropt.CovPredictor()
-            settings.num_iter = 1
-            result2 = trainer.train(settings=settings)
-            A_fin2 = result2.A
-            b_fin2 = result2.b
-            result_grid3 = trainer.grid(rholst=eps_list_train,init_A=A_fin2, init_b=b_fin2, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result2._predictor,settings=settings)
-            dfgrid3 = result_grid3.df
-            dfgrid3 = dfgrid3.drop(columns=["z_vals","x_vals"])
-            dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_pretrained_grid.csv')
-            torch.save(result2._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'pretrained_linear.pth')
+    u = lropt.UncertainParameter(n,
+                            uncertainty_set=lropt.Ellipsoidal(p=2,
+                                                        data=data))
+    # Formulate the Robust Problem
+    x = cp.Variable(n)
+    t = cp.Variable()
+    context_param = lropt.ContextParameter((n,2), data=context)
+    mu_param = lropt.ContextParameter(n, data=mu)
+
+    objective = cp.Minimize(t)
+    constraints = [-x@u <= t, cp.sum(x) == 1, x >= 0]
+    constraints += [context_param >= -1000, mu_param >= -1000]
+    eval_exp = -x @ u
+
+    prob = lropt.RobustProblem(objective, constraints, eval_exp=eval_exp)
+
+    # Train A and b
+    num_iters = cfg.num_iter
+    trainer = lropt.Trainer(prob)
+    settings = lropt.TrainerSettings()
+    settings.lr= cfg.lr
+    settings.optimizer=cfg.optimizer
+    settings.seed=5
+    settings.init_A= init
+    settings.init_b= init_bval
+    settings.init_rho = cfg.init_rho
+    settings.init_lam= cfg.init_lam
+    settings.init_mu= cfg.init_mu
+    settings.mu_multiplier= cfg.mu_multiplier
+    settings.test_percentage = cfg.test_percentage
+    settings.save_history = cfg.save_history
+    settings.lr_step_size = cfg.lr_step_size
+    settings.lr_gamma = cfg.lr_gamma
+    settings.random_init = cfg.random_init
+    settings.parallel = cfg.parallel
+    settings.kappa = cfg.kappa
+    settings.contextual = cfg.contextual
+    settings.batch_percentage = cfg.batch_percentage
+    settings.eta= cfg.eta
+    settings.obj_scale = cfg.obj_scale
+    settings.max_iter_line_search = cfg.max_iter_line_search
+    settings.line_search = cfg.line_search
+    settings.max_batch_size = cfg.max_batch_size
+    settings.batch_percentage = cfg.batch_percentage
+    settings.validate_percentage = cfg.validate_percentage
+    settings.test_frequency = cfg.test_frequency
+    settings.validate_frequency = cfg.validate_frequency
+    settings.initialize_predictor = cfg.initialize_predictor
+    settings.num_iter = cfg.num_iter
+    settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200)
+    # settings.predictor = lropt.DeepNormalModel()
+    settings.data = data
+    settings.cost_func = True
+    print("training start")
+    result = trainer.train(settings=settings)
+    df = result.df
+    A_fin = result.A
+    b_fin = result.b
+    torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_trained_linear.pth')
+
+        # result_grid4 = trainer.grid(rholst=[0.5,1,2],init_A=A_fin, init_b=b_fin, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result._predictor)
+        # dfgrid4 = result_grid4.df
+        # dfgrid4 = dfgrid4.drop(columns=["z_vals","x_vals"])
+        # dfgrid4.to_csv(hydra_out_dir+'/'+str(seed)+'_linear_trained_grid.csv')
+    # except:
+    #     print("training failed ",finseed,cfg.eta,cfg.obj_scale)
+    
+    def plot_iters(dftrain,dftest, title, steps=2000, logscale=True,kappa=0):
+        plt.rcParams.update({
+            "text.usetex": True,
+
+            "font.size": 22,
+            "font.family": "serif"
+        })
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 3))
+        ax1.plot(dftrain["Violations_train"][:steps],
+                label="In-sample empirical CVaR", linestyle="--")
+        ax1.plot(np.arange(0,num_iters, settings.validate_frequency),dftest["Violations_validate"][:steps],
+                label="out-of-sample empirical CVaR", linestyle="--")
+
+        ax1.set_xlabel("Iterations")
+        ax1.hlines(xmin=0, xmax=dftrain["Violations_train"][:steps].shape[0],
+                y=kappa, linestyles="--", color="black", label=f"Target threshold: {kappa}")
+        ax1.legend()
+        ax2.plot(dftrain["Train_val"][:steps], label="In-sample objective value")
+        ax2.plot(np.arange(0,num_iters, settings.validate_frequency),dftest["Validate_val"][:steps], label="Out-of-sample objective value")
+
+        ax2.set_xlabel("Iterations")
+        ax2.ticklabel_format(style="sci", axis='y',
+                            scilimits=(0, 0), useMathText=True)
+        ax2.legend()
+        if logscale:
+            ax1.set_xscale("log")
+            ax2.set_xscale("log")
+        plt.savefig(hydra_out_dir+'/'+str(seed)+'_'+title+"_iters.pdf", bbox_inches='tight')
+    try:
+        findfs = []
+        for rho in eps_list:
+            df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
+            data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
+            single_row_df = pd.DataFrame(data_df, index=[0])
+            findfs.append(single_row_df)
+        findfs = pd.concat(findfs)
+        findfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
+    except:
+        None
+
+    if cfg.eta == 1 and cfg.obj_scale == 0.5:
+        settings.init_rho = cfg.init_rho
+        settings.num_iter = 1
+        settings.initialize_predictor = True
+        result_grid = trainer.grid(rholst=eps_list, init_A=init,
+                            init_b=init_bval, seed=5,
+                            init_alpha=0., test_percentage=test_p, quantiles = (0.3, 0.7),settings=settings)
+        dfgrid = result_grid.df
+        dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
+        dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'mean_var_grid.csv')
 
 
-        try:
-            plot_iters(result.df,result.df_validate, steps=num_iters, title="training_"+str(cfg.eta),kappa=settings.kappa)
-        except:
-            None
+        # untrained linear
+        settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
+        # settings.predictor = lropt.CovPredictor()
+        settings.num_iter = 1
+        result2 = trainer.train(settings=settings)
+        A_fin2 = result2.A
+        b_fin2 = result2.b
+        result_grid3 = trainer.grid(rholst=eps_list_train,init_A=A_fin2, init_b=b_fin2, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result2._predictor,settings=settings)
+        dfgrid3 = result_grid3.df
+        dfgrid3 = dfgrid3.drop(columns=["z_vals","x_vals"])
+        dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_pretrained_grid.csv')
+        torch.save(result2._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'pretrained_linear.pth')
 
+    try:
+        plot_iters(result.df,result.df_validate, steps=num_iters, title="training_"+str(cfg.eta),kappa=settings.kappa)
+    except:
+        None
+
+    try:
         beg1, end1 = 0, 100
         beg2, end2 = 0, 100
         plt.figure(figsize=(15, 4))
         
-        if cfg.eta == 0.05 and cfg.obj_scale == 0.5:
+        if cfg.eta == 1 and cfg.obj_scale == 0.5:
             plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
                 dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
             plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
@@ -306,11 +307,10 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         plt.scatter(nonrob_probs,nonrob_evals, color = "tab:purple", marker = "s", label="Non Robust")
         plt.legend()
         plt.savefig(hydra_out_dir+'/'+str(seed)+'_'+"port_objective_vs_violations_"+str(cfg.eta)+".pdf", bbox_inches='tight')
-
-        plt.figure(figsize=(15, 4))
         return None
     except:
-        return None
+        None
+
 
 @hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/port_parallel/configs",config_name = "port.yaml", version_base = None)
 def main_func(cfg):
@@ -337,7 +337,7 @@ if __name__ == "__main__":
     R = 10
     initseed = seed_list[idx]
     n = n_list[idx]
-    N = 500
+    N = 1000
     num_context = 20
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)
@@ -355,7 +355,8 @@ if __name__ == "__main__":
     for j in range(num_context):
       context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
       test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
-    eps_list=np.linspace(0.5, 3, 60)
+    eps_list= np.concat([np.logspace(-4,-1,20),np.linspace(0.11,5,40)])
+    # np.linspace(0.5, 3, 60)
     eps_list_train = np.linspace(0.5, 10, 120)
     main_func()
 

@@ -56,7 +56,7 @@ def gen_demand_varied(sig,mu,d,N,seed=399):
     pointlist = []
     np.random.seed(seed)
     for i in range(N):
-        d_train = np.random.multivariate_normal(d - 0.1*mu[i],sig[i]+0.0*np.eye(d.shape[0]))
+        d_train = np.random.multivariate_normal(d - 0.1*mu[i],sig[i]+0.1*np.eye(d.shape[0]))
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
@@ -239,25 +239,25 @@ def inv_exp(cfg,hydra_out_dir,seed):
         except:
             print("training failed ",finseed,cfg.eta,cfg.obj_scale)
 
-        # try:
-        #     findfs = []
-        #     for rho in eps_list_train:
-        #         df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result._predictor], rho_list=[rho])
-        #         data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
-        #         single_row_df = pd.DataFrame(data_df, index=[0])
-        #         findfs.append(single_row_df)
-        #         tempdfs = pd.concat(findfs)
-        #         tempdfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
-        #     findfs = pd.concat(findfs)
-        #     findfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
-        # except:
-        #     print("compare failed")
+        try:
+            findfs = []
+            for rho in eps_list_train:
+                df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result._predictor], rho_list=[rho])
+                data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
+                single_row_df = pd.DataFrame(data_df, index=[0])
+                findfs.append(single_row_df)
+                tempdfs = pd.concat(findfs)
+                tempdfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
+            findfs = pd.concat(findfs)
+            findfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
+        except:
+            print("compare failed")
 
         if cfg.eta == 0.10 and cfg.obj_scale==0.5:
             settings.init_rho = cfg.init_rho
             settings.num_iter = 1
             settings.initialize_predictor = True
-            result_grid = trainer.grid(rholst=eps_list, init_A=init,
+            result_grid = trainer.grid(rholst=eps_list_train, init_A=init,
                                 init_b=init_bval, seed=5,
                                 init_alpha=0., test_percentage=test_p, quantiles = (0.3, 0.7),settings=settings)
             dfgrid = result_grid.df
@@ -382,6 +382,6 @@ if __name__ == "__main__":
         context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
         test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
     eps_list=np.linspace(1, 4, 50)
-    eps_list_train = np.linspace(1, 9, 90)
+    eps_list_train = np.linspace(1, 4, 50)
     main_func()
 
