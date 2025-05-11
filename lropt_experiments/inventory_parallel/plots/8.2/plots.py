@@ -27,16 +27,22 @@ seeds1 = [0,10,20,30,40]
 seeds2 = [50,60,70,80,90]
 # foldername11 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-01/23-14-44/"
 # foldername31 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-01/23-20-31/"
-foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-06/1/"
-foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-06/2/"
+# foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-06/1/"
+# foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-06/2/"
+foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/Expected/Adam/1.1/"
+foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/Expected/Adam/2.1/"
 # foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-04/1/"
 # foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-04/1/"
 foldernamedro1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/MRO/60.1/"
 foldernamedro2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/MRO/60.2/"
 
+# foldernamedro1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/Mult/1.1/"
+# foldernamedro2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/Mult/2.1/"
+
 foldername21 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-06/1.1/"
 foldername41 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-06/2.1/"
-
+# foldername21 = foldername1
+# foldername41 = foldername3
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
@@ -354,5 +360,5 @@ def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=None):
     plt.tight_layout()
     # plt.xlim([-0.02,0.20])
     plt.title("Out-of-sample objectives (test set)")
-    plt.savefig(path+"Test_objectives_best_all.pdf",bbox_inches = "tight")
+    plt.savefig(path+"Test_objectives_best_all_new.pdf",bbox_inches = "tight")
 plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid)
