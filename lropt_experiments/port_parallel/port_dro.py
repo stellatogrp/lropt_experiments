@@ -114,7 +114,18 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     dfgrid = result_grid.df
     dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
     dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'dro_grid.csv')
-
+    solvetime = 0
+    try:
+        prob.solve()
+        solvetime = prob.solver_stats.solve_time
+    except:
+        print("solving failed")
+    try:
+        data_df = {"seed":initseed+10*seed,"time": solvetime}
+        single_row_df = pd.DataFrame(data_df, index=[0])
+        single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
+    except:
+        print("save failed")
     try:
         beg1, end1 = 0, 100
         beg2, end2 = 0, 100
@@ -157,13 +168,12 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    seed_list = [0,10,20,30,40,50,60,70,80,90]
-    n_list = [30,30,30,30,30,30,30,30,30,30]
+    seed_list = [0]
+    n_list = [10,20,30]
     R = 10
-    initseed = seed_list[idx]
-    n = 20
-    # n_list[idx]
-    N = 2000
+    initseed = 0
+    n = n_list[idx]
+    N = 500
     num_context = 20
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)

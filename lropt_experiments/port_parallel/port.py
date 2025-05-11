@@ -230,11 +230,17 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             ax1.set_xscale("log")
             ax2.set_xscale("log")
         plt.savefig(hydra_out_dir+'/'+str(seed)+'_'+title+"_iters.pdf", bbox_inches='tight')
+    solvetime = 0
+    try:
+        prob.solve()
+        solvetime = prob.solver_stats.solve_time
+    except:
+        print("solving failed")
     try:
         findfs = []
         for rho in eps_list:
             df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
-            data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
+            data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime}
             single_row_df = pd.DataFrame(data_df, index=[0])
             findfs.append(single_row_df)
         findfs = pd.concat(findfs)
@@ -338,7 +344,7 @@ if __name__ == "__main__":
     R = 10
     initseed = seed_list[idx]
     n = n_list[idx]
-    N = 2000
+    N = 500
     num_context = 20
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)

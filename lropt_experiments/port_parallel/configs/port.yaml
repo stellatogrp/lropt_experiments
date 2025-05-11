@@ -15,7 +15,7 @@ obj_scale: 1
 seed: 0
 lr: 0.01
 num_iter: 300
-optimizer: "Adam"
+optimizer: "SGD"
 init_rho: 1
 init_lam: 1
 init_mu: 1
@@ -36,8 +36,8 @@ validate_percentage: 0.2
 test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
-Nval: 2000
-nval: 30
+Nval: 500
+nval: 10
 Rval: 10
 seedvals: 0
 knnnum: .1
@@ -48,4 +48,4 @@ Fmults: 0.2
 knn_mult: 0.95
 deep: False
 expected: True
-use_eval: True
+use_eval: False

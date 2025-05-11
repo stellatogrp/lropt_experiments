@@ -56,7 +56,7 @@ def gen_demand_varied(sig,mu,d,N,seed=399):
     pointlist = []
     np.random.seed(seed)
     for i in range(N):
-        d_train = np.random.multivariate_normal(d - 0.1*mu[i],sig[i]+0.1*np.eye(d.shape[0]))
+        d_train = np.random.multivariate_normal(d - 0.1*mu[i],sig[i]+0.0*np.eye(d.shape[0]))
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
@@ -130,7 +130,18 @@ def inv_exp(cfg,hydra_out_dir,seed,idxx):
         dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'dro_grid.csv')
     except:
         print("grid failed")
-
+    solvetime = 0
+    try:
+        prob.solve()
+        solvetime = prob.solver_stats.solve_time
+    except:
+        print("solving failed")
+    try:
+        data_df = {"seed":initseed+10*seed,"time": solvetime}
+        single_row_df = pd.DataFrame(data_df, index=[0])
+        single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
+    except:
+        print("save failed")
     try:
         beg1, end1 = 0, 100
         beg2, end2 = 0, 100
@@ -174,7 +185,7 @@ if __name__ == "__main__":
     # parser.add_argument('--R', type=int, default=2)
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
-    seed_list = [0,10,20,30,40,50,60,70,80,90]
+    seed_list = [0,50]
     R = 5
     initseed = seed_list[idx]
     test_p = 0.5

@@ -139,6 +139,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     settings.cov_gam = cfg.gam_scale
     settings.predictor = lropt.DeepNormalModel()
     settings.data = data
+    settings.cost_func = False
     try: 
         result = trainer.train(settings=settings)
         df = result.df
@@ -148,12 +149,17 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         print("Training complete")
     except:
         print("training failed")
-
+    solvetime = 0
+    try:
+        prob.solve()
+        solvetime = prob.solver_stats.solve_time
+    except:
+        print("solving failed")
     try:
         findfs = []
         for rho in eps_list:
             df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
-            data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
+            data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0],"time":solvetime}
             single_row_df = pd.DataFrame(data_df, index=[0])
             findfs.append(single_row_df)
         findfs = pd.concat(findfs)
@@ -204,6 +210,7 @@ if __name__ == "__main__":
     for j in range(num_context):
       context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
       test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
-    eps_list= np.concat([np.logspace(-4,-1,20),np.linspace(0.11,1.5,20)])
+    eps_list= np.array([1])
+    # np.concat([np.logspace(-4,-1,20),np.linspace(0.11,1.5,20)])
     main_func()
 

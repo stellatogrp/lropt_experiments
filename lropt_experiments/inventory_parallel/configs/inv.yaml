@@ -15,7 +15,7 @@ obj_scale: 1
 seed: 0
 lr: 0.0005
 num_iter: 501
-optimizer: "SGD"
+optimizer: "Adam"
 init_rho: 1
 init_lam: 2
 init_mu: 2

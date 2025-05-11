@@ -241,12 +241,17 @@ def inv_exp(cfg,hydra_out_dir,seed):
             # dfgrid4.to_csv(hydra_out_dir+'/'+str(seed)+'_linear_trained_grid.csv')
         except:
             print("training failed ",finseed,cfg.eta,cfg.obj_scale)
-
+        solvetime = 0
+        try:
+            prob.solve()
+            solvetime = prob.solver_stats.solve_time
+        except:
+            print("solving failed")
         try:
             findfs = []
             for rho in eps_list:
                 df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result._predictor], rho_list=[rho])
-                data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
+                data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime}
                 single_row_df = pd.DataFrame(data_df, index=[0])
                 findfs.append(single_row_df)
                 tempdfs = pd.concat(findfs)
