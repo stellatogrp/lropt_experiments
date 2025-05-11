@@ -48,4 +48,4 @@ Fmults: 0.2
 knn_mult: 0.95
 deep: False
 expected: True
-use_val: True
+use_eval: True

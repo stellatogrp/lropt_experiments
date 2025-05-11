@@ -224,6 +224,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
         settings.initialize_predictor = cfg.initialize_predictor
         settings.num_iter = cfg.num_iter
         settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 100)
+        # settings.predictor = lropt.DeepNormalModel()
         settings.data=data
         settings.cost_func = True
         settings.use_eval = cfg.use_eval
@@ -243,7 +244,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
 
         try:
             findfs = []
-            for rho in eps_list_train:
+            for rho in eps_list:
                 df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result._predictor], rho_list=[rho])
                 data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0]}
                 single_row_df = pd.DataFrame(data_df, index=[0])
@@ -383,7 +384,8 @@ if __name__ == "__main__":
     for j in range(num_context):
         context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
         test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
-    eps_list=np.linspace(1, 4, 50)
+    eps_list= np.concat([np.logspace(-4,-1,10),np.linspace(0.11,1,15),np.linspace(1.1,5,25)])
+    # np.linspace(1, 4, 50)
     eps_list_train = np.linspace(1, 4, 50)
     main_func()
 
