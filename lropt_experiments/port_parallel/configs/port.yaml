@@ -29,14 +29,14 @@ parallel: False
 kappa: 0
 contextual: True
 max_iter_line_search: 100
-line_search: False
+line_search: True
 max_batch_size: 100
 batch_percentage: 0.8
 validate_percentage: 0.2
 test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
-Nval: 1000
+Nval: 2000
 nval: 30
 Rval: 10
 seedvals: 0
