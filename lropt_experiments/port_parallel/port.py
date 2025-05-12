@@ -344,7 +344,7 @@ if __name__ == "__main__":
     R = 10
     initseed = seed_list[idx]
     n = n_list[idx]
-    N = 2000
+    N = 1000
     num_context = 20
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)
