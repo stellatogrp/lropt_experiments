@@ -13,7 +13,7 @@ hydra:
 eta: 0.15
 obj_scale: 1
 seed: 0
-lr: 0.01
+lr: 0.05
 num_iter: 300
 optimizer: "SGD"
 init_rho: 1
@@ -36,8 +36,8 @@ validate_percentage: 0.2
 test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
-Nval: 500
-nval: 10
+Nval: 2000
+nval: 30
 Rval: 10
 seedvals: 0
 knnnum: .1
