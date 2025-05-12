@@ -1,0 +1,2 @@
+seed,rho,a_seed,eta,gamma,init_rho,valid_obj,valid_prob,test_obj,test_prob,time
+70,1,70,0.1,1,1,-0.8338929741448499,0.0,-0.8214199104061841,0.0,0.002036874
