@@ -31,7 +31,7 @@ foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/po
 # foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/MRO/30_2000/"
 foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/DRO/30_2000/"
 foldername4="/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-05-06/30_mv/"
-foldername5 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/Delage/30_2000/"
+foldername5 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/Delage_2/30_2000/"
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
@@ -301,6 +301,8 @@ plot_data.to_csv(path+"plot_data.csv")
 dfs_best[0.05].to_csv(path+"plot_data_005.csv") 
 dfs_best[0.1].to_csv(path+"plot_data_01.csv") 
 dfs_best[0.15].to_csv(path+"plot_data_015.csv")
+dfs_best_o[0.05].to_csv(path+"plot_data_005_o.csv")
+
 # plt.rcParams.update({
 #     "text.usetex":True,
 #     "font.size":24,

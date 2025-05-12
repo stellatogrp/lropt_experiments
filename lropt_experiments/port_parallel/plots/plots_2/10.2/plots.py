@@ -28,9 +28,9 @@ objs1 = [0.9,0.8,0.6,0.4,0.2,0.1]
 seeds1 = [0,10,20,30,40,50,60,70,80,90]
 foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/2025-05-06/10_1000/"
 foldername4 = foldername1
-foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/Expected/Deep/10_1000/"
+foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/Expected/SGD/10_1000/"
 foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/MRO/10_1000/"
-foldername5 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/Delage/10_1000/"
+foldername5 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/Delage_2/10_1000/"
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
@@ -299,6 +299,8 @@ plot_data.to_csv(path+"plot_data.csv")
 dfs_best[0.05].to_csv(path+"plot_data_005.csv") 
 dfs_best[0.1].to_csv(path+"plot_data_01.csv") 
 dfs_best[0.15].to_csv(path+"plot_data_015.csv")
+dfs_best_o[0.05].to_csv(path+"plot_data_005_o.csv")
+
 # plt.rcParams.update({
 #     "text.usetex":True,
 #     "font.size":24,
@@ -337,4 +339,4 @@ def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=None):
     # plt.xlim([-0.02,0.20])
     plt.title("Out-of-sample objectives (test set)")
     plt.savefig(path+"Test_objectives_best_all_new.pdf",bbox_inches='tight')
-plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid)
+plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=[-0.93,-0.78])
