@@ -186,7 +186,7 @@ if __name__ == "__main__":
     # parser.add_argument('--n', type=int, default=15)
     # arguments = parser.parse_args()
     seed_list = [0,50]
-    R = 5
+    R = 10
     initseed = seed_list[idx]
     test_p = 0.5
     N = 1000
