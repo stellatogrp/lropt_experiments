@@ -33,8 +33,8 @@ foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/in
 foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/Adam/2/"
 # foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-04/1/"
 # foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/2025-05-04/1/"
-foldernamedro1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/DRO/60.1/"
-foldernamedro2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/DRO/60.2/"
+foldernamedro1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/DRO/50/"
+foldernamedro2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/DRO/50/"
 
 # foldernamedro1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/Mult/1.1/"
 # foldernamedro2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/Mult/2.1/"
@@ -152,21 +152,21 @@ df_nonrob = pd.concat(df_nonrob)
 df_dro = []
 running_ind = 0
 newfolder = foldernamedro1+str(running_ind)
-for seed in range(R):
+for seed in range(2*R):
     try:
         df = pd.read_csv(newfolder+'/'+str(seed)+"_dro_grid.csv")
-        df['seed'] = seeds1[seed]
+        df['seed'] = (seeds1+seeds2)[seed]
         df_dro.append(df)
     except:
         print(3,eta,obj,seed)
-newfolder = foldernamedro2+str(running_ind)
-for seed in range(R):
-    try:
-        df = pd.read_csv(newfolder+'/'+str(seed)+"_dro_grid.csv")
-        df['seed'] = seeds2[seed]
-        df_dro.append(df)
-    except:
-        print(3,eta,obj,seed)
+# newfolder = foldernamedro2+str(running_ind)
+# for seed in range(R):
+#     try:
+#         df = pd.read_csv(newfolder+'/'+str(seed)+"_dro_grid.csv")
+#         df['seed'] = seeds2[seed]
+#         df_dro.append(df)
+#     except:
+#         print(3,eta,obj,seed)
 df_dro = pd.concat(df_dro)
 
 # plt.rcParams.update({
@@ -305,7 +305,7 @@ for target in target_list:
             cur_df = df_dro[df_dro["seed"] == seed][abs(df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target)<=curdif].iloc[best_idx:best_idx+1]
             dfs_best_dro[target].append(cur_df)
         except:
-            print(seed)
+            print("dro",seed)
     dfs_best_dro[target] = pd.concat(dfs_best_dro[target])  
 plot_data = []
 for target in target_list:

@@ -1,0 +1,17 @@
+# defaults:
+#   - override hydra/launcher: joblib
+hydra:
+  # launcher:
+  #   n_jobs: 12
+  job:
+    chdir: True
+  mode: MULTIRUN
+  sweeper:
+    params:
+      alpha: 0.20,0.25
+      eps: 0.05,0.10,0.15,0.20,0.30,0.40
+alpha: 0.05
+eps: 0.05
+nval: 10
+Nval: 2000
+sepcontext: False
