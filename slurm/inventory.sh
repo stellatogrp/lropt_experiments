@@ -3,7 +3,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=15
-#SBATCH --mem-per-cpu=60G
+#SBATCH --mem-per-cpu=30G
 #SBATCH --time=23:40:00
 #SBATCH -o /scratch/gpfs/iywang/lropt_revision/output/inventory/inv_test_%A_.txt
 #SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT
