@@ -49,3 +49,5 @@ knn_mult: 0.95
 deep: False
 expected: True
 use_eval: False
+cvar_eval: True
+target_eta: 0.1

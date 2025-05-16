@@ -63,14 +63,20 @@ def gen_demand_varied(sig,mu,orig_mu,N,seed=399):
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
-def calc_eval(x,t,u):
+def calc_eval(x,t,u,eta):
     val = 0
     vio = 0
+    port_values = u@x
+    quantile_index = int((1-eta) * len(port_values)) 
+    port_sorted = np.sort(port_values)[::-1]  # Descending sort
+    quantile_value = port_sorted[quantile_index]
+    port_le_quant = (port_values <= quantile_value).astype(float)
+    cvar_loss = np.sum(port_values * port_le_quant) / np.sum(port_le_quant)
     for i in range(u.shape[0]):
         val_cur = -x@u[i]
-        val+= 0.5*val_cur + 0.5*t
+        val+= val_cur
         vio += (val_cur >= t)
-    return val/u.shape[0], vio/u.shape[0]
+    return cvar_loss, vio/u.shape[0]
 
 
 def portfolio_exp(cfg,hydra_out_dir,seed):
@@ -91,6 +97,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     if cfg.eta == 0.05 and cfg.obj_scale==0.5:
         context_evals = 0
         context_probs = 0
+        context_objs = 0
         for j in range(num_context):
             u = lropt.UncertainParameter(n,
                                     uncertainty_set=lropt.Scenario(
@@ -99,18 +106,23 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             x_s = cp.Variable(n)
             t_s = cp.Variable()
 
-            objective = cp.Minimize(0.5*cp.sum(-data[context_inds[j]]@x_s)/len(context_inds[j]) + 0.5*t_s)
+            objective = cp.Minimize(t_s)
             constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
             prob_context = lropt.RobustProblem(objective, constraints)
             prob_context.solve()
-            eval, prob_vio = calc_eval(x_s.value, t_s.value,data[test_inds[j]])
+            eval, prob_vio = calc_eval(x_s.value, t_s.value,data[test_inds[j]],cfg.target_eta)
             context_evals += eval
             context_probs += prob_vio
+            context_obj += t_s.value
+
+        
         context_evals = context_evals/num_context
         context_probs = context_probs/num_context
+        context_objs = context_objs/num_context
 
         nonrob_evals = 0
         nonrob_probs = 0
+        nonrob_objs = 0
         for j in range(num_context):
             u = lropt.UncertainParameter(n,
                                     uncertainty_set=lropt.Scenario(
@@ -119,17 +131,19 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             x_s = cp.Variable(n)
             t_s = cp.Variable()
 
-            objective = cp.Minimize(0.5*cp.sum(-data[context_inds[j]]@x_s)/len(context_inds[j]) + 0.5*t_s)
+            objective = cp.Minimize(t_s)
             constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
             prob_nonrob = lropt.RobustProblem(objective, constraints)
             prob_nonrob.solve()
-            eval, prob_vio = calc_eval(x_s.value, t_s.value,data[test_inds[j]])
+            eval, prob_vio = calc_eval(x_s.value, t_s.value,data[test_inds[j]],cfg.target_eta)
             nonrob_evals += eval
             nonrob_probs += prob_vio
+            nonrob_objs += t_s.value
         nonrob_evals = nonrob_evals / (num_context)
         nonrob_probs = nonrob_probs / (num_context)
+        nonrob_objs = nonrob_objs/num_context
 
-        data_df = {'seed': initseed+10*seed, "a_seed":finseed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals}
+        data_df = {'seed': initseed+10*seed, "a_seed":finseed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals, "scenario_in": context_objs, "nonrob_in": nonrob_objs}
         single_row_df = pd.DataFrame(data_df, index=[0])
         single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals_nonrob.csv",index=False)
 
@@ -143,10 +157,10 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     context_param = lropt.ContextParameter((n,2), data=context)
     mu_param = lropt.ContextParameter(n, data=mu)
 
-    objective = cp.Minimize(0.5*cp.sum(-train@x)/train.shape[0] + 0.5*t)
+    objective = cp.Minimize(t)
     constraints = [-x@u <= t, cp.sum(x) == 1, x >= 0]
     constraints += [context_param >= -1000, mu_param >= -1000]
-    eval_exp = -0.5*x @ u + 0.5*t
+    eval_exp = -x @ u
 
     prob = lropt.RobustProblem(objective, constraints, eval_exp=eval_exp)
 
@@ -188,12 +202,17 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     settings.data = data
     settings.cost_func = True
     settings.use_eval = cfg.use_eval
+    settings.cvar_eval = cfg.cvar_eval
+    settings.target_eta = cfg.target_eta
     print("training start")
-    result = trainer.train(settings=settings)
-    df = result.df
-    A_fin = result.A
-    b_fin = result.b
-    torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_trained_linear.pth')
+    try:
+        result = trainer.train(settings=settings)
+        df = result.df
+        A_fin = result.A
+        b_fin = result.b
+        torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_trained_linear.pth')
+    except:
+        print("training failed")
 
         # result_grid4 = trainer.grid(rholst=[0.5,1,2],init_A=A_fin, init_b=b_fin, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result._predictor)
         # dfgrid4 = result_grid4.df
@@ -240,13 +259,13 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         findfs = []
         for rho in eps_list:
             df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
-            data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime,"valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0]}
+            data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime,"valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0], "valid_in": df_valid["Validate_obj"][0], "test_in": df_test["Test_obj"][0]}
             single_row_df = pd.DataFrame(data_df, index=[0])
             findfs.append(single_row_df)
         findfs = pd.concat(findfs)
         findfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
     except:
-        None
+        print("compare_failed")
 
     if cfg.eta == 0.05 and cfg.obj_scale == 0.5:
         settings.init_rho = cfg.init_rho
@@ -283,7 +302,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         beg2, end2 = 0, 100
         plt.figure(figsize=(15, 4))
         
-        if cfg.eta == 0.05 and cfg.obj_scale == 0.5:
+        if cfg.eta ==0.05 and cfg.obj_scale == 0.5:
             plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
                 dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
             plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
@@ -324,10 +343,10 @@ def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     # print(f"Current working directory: {os.getcwd()}")
     njobs = get_n_processes(30)
-    Parallel(n_jobs=njobs)(
-        delayed(portfolio_exp)(cfg,hydra_out_dir,r) for r in range(R))
-    # for r in range(R):
-    #     portfolio_exp(cfg,hydra_out_dir,r)
+    # Parallel(n_jobs=njobs)(
+    #     delayed(portfolio_exp)(cfg,hydra_out_dir,r) for r in range(R))
+    for r in range(R):
+        portfolio_exp(cfg,hydra_out_dir,r)
     
 
 if __name__ == "__main__":
@@ -353,7 +372,6 @@ if __name__ == "__main__":
     sig = np.vstack([sig]*num_reps)
     mu = np.vstack([mu]*num_reps)
     context = np.vstack([context]*num_reps)
-    np.random.seed(5)
     test_valid_indices = np.random.choice(N,int((test_p+0.2)*N), replace=False)
     test_indices = test_valid_indices[:int((test_p)*N)]
     valid_indices = test_valid_indices[int((test_p)*N):]
