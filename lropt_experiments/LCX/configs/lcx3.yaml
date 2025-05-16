@@ -9,9 +9,10 @@ hydra:
   sweeper:
     params:
       alpha: 0.30,0.35
-      eps: 0.05,0.10,0.15,0.20,0.30,0.40
+      eps: 0.10,0.15,0.20,0.30,0.40
 alpha: 0.05
 eps: 0.05
 nval: 10
 Nval: 2000
 sepcontext: False
+maxouteriter: 30

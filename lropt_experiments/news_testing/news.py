@@ -9,6 +9,8 @@ import pandas as pd
 from omegaconf import DictConfig
 import os
 import sys
+import joblib
+from joblib import Parallel, delayed
 sys.path.append('..')
 import matplotlib
 matplotlib.use('Agg')
@@ -23,13 +25,35 @@ plt.rcParams.update({
     "font.family": "serif"
 })
 
+def get_n_processes(max_n=np.inf):
+    """Get number of processes from current cps number
+    Parameters
+    ----------
+    max_n: int
+        Maximum number of processes.
+    Returns
+    -------
+    float
+        Number of processes to use.
+    """
+
+    try:
+        # Check number of cpus if we are on a SLURM server
+        n_cpus = int(os.environ["SLURM_CPUS_PER_TASK"])
+    except KeyError:
+        n_cpus = joblib.cpu_count()
+
+    n_proc = max(min(max_n, n_cpus), 1)
+
+    return n_proc
+
 def gen_demand_cor(N,seed,x1, x2):
     np.random.seed(seed)
     sig = np.eye(2)
     mu = np.array((6,7))
     points_list = []
     for i in range(N):
-        mu_shift = -0.4*x1 - 0.1*x2
+        mu_shift = -0.4*x1[i] - 0.1*x2[i]
         newpoint = np.random.multivariate_normal(mu+mu_shift,sig)
         points_list.append(newpoint)
     return np.vstack(points_list)
@@ -44,78 +68,74 @@ def calc_eval(x,p,k,u,t):
         vio += (val_cur >= t)
     return val/u.shape[0], vio/u.shape[0]
 
-@hydra.main(config_path="/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/news_testing/configs",config_name = "news.yaml", version_base = None)
-def main_func(cfg: DictConfig):
-    import lropt
-    hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
-    print(f"Current working directory: {os.getcwd()}")
-    seed = cfg.seed
-    init_data = [gen_demand_cor(num_reps,seed=seed,x1=init_p_data[i],x2=init_k_data[i]) for i in range(num_context)] 
-    data = np.vstack(init_data)
+def news_exp(cfg,hydra_out_dir,seed):
+    seed = init_seed + seed
+    data = gen_demand_cor(N,seed=seed,x1=p_data,x2=k_data)
     test_p = cfg.test_percentage
     # split dataset
-    test_indices = np.random.choice(num_reps,int((test_p)*num_reps), replace=False)
-    # test_indices = testv_indices[:int((test_p)*num_reps)]
-    # valid_indices = testv_indices[int((test_p)*num_reps):]
-    train_indices = [i for i in range(num_reps) if i not in test_indices]
+    train = data[train_indices]
+    init = sc.linalg.sqrtm(np.cov(train.T))
+    init_bval = np.mean(train, axis=0)
 
-    train = np.array([init_data[j][i] for i in train_indices for j in range(num_context)])
-    test = np.array([init_data[j][i] for i in test_indices for j in range(num_context)])
-    # valid = np.array([init_data[j][i] for i in test_indices for j in range(num_context)])
+    if cfg.eta == 0.01:
 
-    context_evals = 0
-    context_probs = 0
-    # solve for each context and average
-    for context in range(num_context):
-        u = lropt.UncertainParameter(n,
-                                uncertainty_set=lropt.Scenario(
-                                                            data=init_data[context][train_indices]))
-        x_s = cp.Variable(n)
-        t1 = cp.Variable()
-        k1= init_k_data[context]
-        p1 = init_p_data[context]
-        objective = cp.Minimize(t1)
-        constraints = [lropt.max_of_uncertain([-p1[0]*x_s[0] - p1[1]*x_s[1],
-                                                -p1[0]*x_s[0] - p1[1]*u[1],
-                                                -p1[0]*u[0] - p1[1]*x_s[1],
-                                                -p1[0]*u[0]- p1[1]*u[1]])
-                                                + k1@x_s <= t1]
-        constraints += [x_s >= 0]
+        context_evals = 0
+        context_probs = 0
+        # solve for each context and average
+        for j in range(num_context):
+            u = lropt.UncertainParameter(n,
+                                    uncertainty_set=lropt.Scenario(
+                                                                data=data[context_inds[j]]))
+            x_s = cp.Variable(n)
+            t1 = cp.Variable()
+            k1= init_k_data[j]
+            p1 = init_p_data[j]
+            objective = cp.Minimize(t1)
+            constraints = [lropt.max_of_uncertain([-p1[0]*x_s[0] - p1[1]*x_s[1],
+                                                    -p1[0]*x_s[0] - p1[1]*u[1],
+                                                    -p1[0]*u[0] - p1[1]*x_s[1],
+                                                    -p1[0]*u[0]- p1[1]*u[1]])
+                                                    + k1@x_s <= t1]
+            constraints += [x_s >= 0]
 
-        prob_sc = lropt.RobustProblem(objective, constraints)
-        prob_sc.solve()
-        eval, prob_vio = calc_eval(x_s.value, init_p_data[context], init_k_data[context],init_data[context][test_indices],t1.value)
-        context_evals += eval
-        context_probs += prob_vio
-    context_evals = context_evals/num_context
-    context_probs = context_probs/num_context
+            prob_sc = lropt.RobustProblem(objective, constraints)
+            prob_sc.solve()
+            eval, prob_vio = calc_eval(x_s.value, init_p_data[j], init_k_data[j],data[test_inds[j]],t1.value)
+            context_evals += eval
+            context_probs += prob_vio
+        context_evals = context_evals/num_context
+        context_probs = context_probs/num_context
 
-    nonrob_evals = 0
-    nonrob_probs = 0
-    for context in range(num_context):
-        u = lropt.UncertainParameter(n,
-                                uncertainty_set=lropt.Scenario(
-                                                            data=np.mean(init_data[context][train_indices],axis=0).reshape(1,2)))
-        x_s = cp.Variable(n)
-        t1 = cp.Variable()
-        k1= init_k_data[context]
-        p1 = init_p_data[context]
-        objective = cp.Minimize(t1)
-        constraints = [lropt.max_of_uncertain([-p1[0]*x_s[0] - p1[1]*x_s[1],
-                                                -p1[0]*x_s[0] - p1[1]*u[1],
-                                                -p1[0]*u[0] - p1[1]*x_s[1],
-                                                -p1[0]*u[0]- p1[1]*u[1]])
-                                                + k1@x_s <= t1]
-        constraints += [x_s >= 0]
+        nonrob_evals = 0
+        nonrob_probs = 0
+        for j in range(num_context):
+            u = lropt.UncertainParameter(n,
+                                    uncertainty_set=lropt.Scenario(
+                                                                data=np.mean(data[context_inds[j]],axis=0).reshape(1,n)))
+            x_s = cp.Variable(n)
+            t1 = cp.Variable()
+            k1= init_k_data[j]
+            p1 = init_p_data[j]
+            objective = cp.Minimize(t1)
+            constraints = [lropt.max_of_uncertain([-p1[0]*x_s[0] - p1[1]*x_s[1],
+                                                    -p1[0]*x_s[0] - p1[1]*u[1],
+                                                    -p1[0]*u[0] - p1[1]*x_s[1],
+                                                    -p1[0]*u[0]- p1[1]*u[1]])
+                                                    + k1@x_s <= t1]
+            constraints += [x_s >= 0]
 
-        prob_sc = lropt.RobustProblem(objective, constraints)
-        prob_sc.solve()
+            prob_sc = lropt.RobustProblem(objective, constraints)
+            prob_sc.solve()
 
-        eval, prob_vio = calc_eval(x_s.value, init_p_data[context], init_k_data[context],init_data[context][test_indices],t1.value)
-        nonrob_evals += eval
-        nonrob_probs += prob_vio
-    nonrob_evals = nonrob_evals / (num_context)
-    nonrob_probs = nonrob_probs / (num_context)
+            eval, prob_vio = calc_eval(x_s.value, init_p_data[j], init_k_data[j],data[test_inds[j]],t1.value)
+            nonrob_evals += eval
+            nonrob_probs += prob_vio
+        nonrob_evals = nonrob_evals / (num_context)
+        nonrob_probs = nonrob_probs / (num_context)
+
+        data_df = {'seed': seed, "a_seed":seed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals}
+        single_row_df = pd.DataFrame(data_df, index=[0])
+        single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals_nonrob.csv",index=False)
 
     # Formulate uncertainty set
     u = lropt.UncertainParameter(n,
@@ -137,9 +157,6 @@ def main_func(cfg: DictConfig):
     prob = lropt.RobustProblem(objective, constraints,eval_exp = eval_exp)
 
 
-    num_iters = cfg.num_iter
-    initn = sc.linalg.sqrtm(np.cov(train.T))
-    init_bvaln = np.mean(train, axis=0)
     # Train A and b
     from lropt import Trainer
     trainer = Trainer(prob)
@@ -147,8 +164,8 @@ def main_func(cfg: DictConfig):
     settings.lr= cfg.lr
     settings.optimizer=cfg.optimizer
     settings.seed=5
-    settings.init_A= initn
-    settings.init_b=init_bvaln
+    settings.init_A= init
+    settings.init_b=init_bval
     settings.init_rho = cfg.init_rho
     settings.init_lam= cfg.init_lam
     settings.init_mu= cfg.init_mu
@@ -171,39 +188,13 @@ def main_func(cfg: DictConfig):
     settings.test_frequency = cfg.test_frequency
     settings.validate_frequency = cfg.validate_frequency
     settings.initialize_predictor = cfg.initialize_predictor
+    settings.data = data
+    settings.cost_func = True
+    settings.use_eval = cfg.use_eval
 
-    def plot_iters(dftrain,dftest, title, steps=2000, logscale=True,kappa=0):
-        plt.rcParams.update({
-            "text.usetex": True,
-
-            "font.size": 22,
-            "font.family": "serif"
-        })
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 3))
-        ax1.plot(dftrain["Violations_train"][:steps],
-                label="In-sample empirical CVaR", linestyle="--")
-        ax1.plot(np.arange(0,num_iters, settings.validate_frequency),dftest["Violations_validate"][:steps],
-                label="out-of-sample empirical CVaR", linestyle="--")
-
-        ax1.set_xlabel("Iterations")
-        ax1.hlines(xmin=0, xmax=dftrain["Violations_train"][:steps].shape[0],
-                y=kappa, linestyles="--", color="black", label=f"Target threshold: {kappa}")
-        ax1.legend()
-        ax2.plot(dftrain["Train_val"][:steps], label="In-sample objective value")
-        ax2.plot(np.arange(0,num_iters, settings.validate_frequency),dftest["Validate_val"][:steps], label="Out-of-sample objective value")
-
-        ax2.set_xlabel("Iterations")
-        ax2.ticklabel_format(style="sci", axis='y',
-                            scilimits=(0, 0), useMathText=True)
-        ax2.legend()
-        if logscale:
-            ax1.set_xscale("log")
-            ax2.set_xscale("log")
-        plt.savefig(hydra_out_dir+'/'+title+"_iters.pdf", bbox_inches='tight')
-
-    if cfg.eta == 0.20:
+    if cfg.eta == 0.01:
         # no training (steps = 1, look at initalized set)
-        settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain = True,epochs = 20, lr = 0.001)
+        settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
         settings.num_iter = 1 
         result2 = trainer.train(settings=settings)
         A_fin2 = result2.A
@@ -213,45 +204,58 @@ def main_func(cfg: DictConfig):
         result_grid3 = trainer.grid(rholst=eps_list,init_A=A_fin2, init_b=b_fin2, seed=s,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result2._predictor)
         dfgrid3 = result_grid3.df
         dfgrid3 = dfgrid3.drop(columns=["z_vals","x_vals"])
-        dfgrid3.to_csv(hydra_out_dir+'/'+'linear_untrained_grid.csv')
+        dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_untrained_grid.csv')
 
     # training
-    settings.num_iter = cfg.num_iter
-    settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain = True,epochs = 20, lr = 0.001)
-    result = trainer.train(settings=settings)
-    df = result.df
-    df = df.drop(columns=["grad"])
-    df.to_csv(hydra_out_dir+'/'+'linear_train.csv')
+    try:
+        settings.num_iter = cfg.num_iter
+        settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain = True,epochs = 20, lr = 0.001)
+        result = trainer.train(settings=settings)
+        df = result.df
+        df = df.drop(columns=["grad"])
+        df.to_csv(hydra_out_dir+'/'+'linear_train.csv')
 
-    dfval = result.df_validate
-    dfval = dfval.drop(columns=["z_vals","x_vals"])
-    dfval.to_csv(hydra_out_dir+'/'+'linear_validate.csv')
-    torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+'trained_linear.pth')
+        dfval = result.df_validate
+        dfval = dfval.drop(columns=["z_vals","x_vals"])
+        dfval.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_validate.csv')
+        torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'trained_linear.pth')
+    except:
+        print("training failed")
 
-    plot_iters(result.df,result.df_validate, steps=num_iters, title="training_"+str(cfg.eta),kappa=settings.kappa)
+    solvetime = 0
+    try:
+        prob.solve()
+        solvetime = prob.solver_stats.solve_time
+    except:
+        print("solving failed")
+    try:
+        findfs = []
+        for rho in eps_list:
+            df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
+            data_df = {'seed': seed, 'rho':rho, "a_seed":seed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime,"valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0]}
+            single_row_df = pd.DataFrame(data_df, index=[0])
+            findfs.append(single_row_df)
+        findfs = pd.concat(findfs)
+        findfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
+    except:
+        None
 
-    if cfg.eta == 0.20:
+    if cfg.eta == 0.01:
         # Grid search epsilon
         # mean variance set
-        result_grid = trainer.grid(rholst=eps_list, init_A=initn,
-                            init_b=init_bvaln, seed=s,
+        result_grid = trainer.grid(rholst=eps_list, init_A=init,
+                            init_b=init_bval, seed=s,
                             init_alpha=0., test_percentage=test_p, quantiles = (0.3, 0.7))
         dfgrid = result_grid.df
         dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
-        dfgrid.to_csv(hydra_out_dir+'/'+'mean_var_grid.csv')
+        dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'mean_var_grid.csv')
 
-    df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[result.rho])
-
-    data_df = {'seed': cfg.seed,'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'rho': result.rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0],"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals}
-
-    single_row_df = pd.DataFrame(data_df, index=[0])
-    single_row_df.to_csv(hydra_out_dir+'/'+"vals.csv",index=False)
     
     beg1, end1 = 0, 100
     beg2, end2 = 0, 100
     plt.figure(figsize=(15, 4))
     
-    if cfg.eta == 0.20:
+    if cfg.eta == 0.01:
         plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
             dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
         plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
@@ -263,6 +267,9 @@ def main_func(cfg: DictConfig):
         plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_test']), axis=1)[beg2:end2], np.mean(np.vstack(
         dfgrid3['Test_val']), axis=1)[beg2:end2], color="tab:green", label="Linear pretrained test set", marker="s", zorder=2)
         
+        plt.scatter(context_probs,context_evals, color = "black", label="Scenario")
+        plt.scatter(nonrob_probs,nonrob_evals, color = "tab:purple", marker = "s", label="Non Robust")
+
     plt.scatter(df_valid["Avg_prob_validate"][0],df_valid["Validate_val"][0], color="tab:orange", label="Linear trained test set", marker="^", zorder=1)
     plt.scatter(df_test["Avg_prob_test"][0],df_test["Test_val"][0], color="tab:orange", label="Linear trained validate set", marker="s", zorder=1)
     
@@ -270,23 +277,32 @@ def main_func(cfg: DictConfig):
     plt.xlabel(r"Probability of constraint violation $(\hat{\eta})$")
     # plt.ylim([-9, 0])
     plt.grid()
-    plt.scatter(context_probs,context_evals, color = "black", label="Scenario")
-    plt.scatter(nonrob_probs,nonrob_evals, color = "tab:purple", marker = "s", label="Non Robust")
+
     plt.legend()
-    plt.savefig(hydra_out_dir+'/'+"news_objective_vs_violations_"+str(cfg.eta)+".pdf", bbox_inches='tight')
+    plt.savefig(hydra_out_dir+'/'+str(seed)+'_'+"news_objective_vs_violations_"+str(cfg.eta)+".pdf", bbox_inches='tight')
 
     plt.figure(figsize=(15, 4))
 
 
 
+@hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/news_testing/configs",config_name = "news.yaml", version_base = None)
+def main_func(cfg: DictConfig):
+    hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    print(f"Current working directory: {os.getcwd()}")
+    njobs = get_n_processes(30)
+    Parallel(n_jobs=njobs)(
+        delayed(news_exp)(cfg,hydra_out_dir,r) for r in range(R))
+    
+
 if __name__ == "__main__":
     # Formulate constant
     n = 2
+    init_seed = 0
     N = 2000
     #eps_list = [0.5,0.7,0.9,1,1.1,1.3,1.5,2,2.5]
     eps_list = np.linspace(0.5,2.5,50)
     k_init = np.array([4.,5.])
-
+    R = 10
     s = 1
     # in order for scenario to make sense, generate only 20 contexts
     np.random.seed(s)
@@ -296,4 +312,16 @@ if __name__ == "__main__":
     init_p_data = init_k_data + np.maximum(0,np.random.normal(0,3,(num_context,n)))
     p_data = np.repeat(init_p_data,num_reps,axis=0)
     k_data = np.repeat(init_k_data,num_reps,axis=0)
+    test_p = 0.5
+    s = 5
+    np.random.seed(5)
+    test_valid_indices = np.random.choice(N,int((test_p+0.2)*N), replace=False)
+    test_indices = test_valid_indices[:int((test_p)*N)]
+    valid_indices = test_valid_indices[int((test_p)*N):]
+    train_indices = [i for i in range(N) if i not in test_valid_indices]
+    context_inds = {}
+    test_inds = {}
+    for j in range(num_context):
+      context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
+      test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
     main_func()

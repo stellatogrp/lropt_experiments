@@ -208,19 +208,19 @@ def lcx_exp(cfg,hydra_out_dir,seed):
     print(seed)
     start_time = time.time()
     data = gen_demand_varied(sig,mu,orig_mu,N,seed=seed)
-    train = data[train_indices]
-    validate = data[valid_indices]
-    test = data[test_indices]
-    datamax = np.max(np.abs(data))
+    train = data[context_inds[context_val]]
+    validate = data[valid_inds[context_val]]
+    test = data[test_inds[context_val]]
+    datamax = np.max(np.abs(train))
     eps = cfg.eps
     alpha = cfg.alpha
     try:
         eval, prob_vio,eval_vali, prob_vali = min_max(eps,alpha,train,datamax,test,validate)
-        data_df = {'seed': seed, "alpha":alpha, "eps": eps,"test_lcx_prob": prob_vio,"test_lcx_obj":eval,"valid_lcx_prob": prob_vali,"valid_lcx_obj":eval_vali, 'time':time.time() - start_time}
+        data_df = {"context_val":context_val,'seed': seed, "alpha":alpha, "eps": eps,"test_lcx_prob": prob_vio,"test_lcx_obj":eval,"valid_lcx_prob": prob_vali,"valid_lcx_obj":eval_vali, 'time':time.time() - start_time}
         single_row_df = pd.DataFrame(data_df, index=[0])
-        single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals_lcx.csv",index=False)
+        single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+str(context_val)+'_'+"vals_lcx.csv",index=False)
     except:
-        print("tuning failed")
+        print("Training failed")
     
 
 @hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/LCX/configs",config_name = "lcx1.yaml", version_base = None)
@@ -231,13 +231,16 @@ def main_func(cfg):
     Parallel(n_jobs=njobs)(
         delayed(lcx_exp)(cfg,hydra_out_dir,r) for r in range(R))
     # for r in range(R):
-    #    lcx_exp(cfg,hydra_out_dir,r)
+    #     portfolio_exp(cfg,hydra_out_dir,r)
     
      
 if __name__ == "__main__":
     idx = int(os.environ["SLURM_ARRAY_TASK_ID"])
     n_list = [10,20,30]
-    n = n_list[idx]
+    context_list = np.arange(20)
+    n = 10
+    context_val = context_list[idx]
+    # n_list[idx]
     N = 2000
     R = 10
     num_context = 20
@@ -258,16 +261,17 @@ if __name__ == "__main__":
     test_inds = {}
     valid_inds = {}
     for j in range(num_context):
-        context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
+        context_inds[j]= [i for i in  train_indices  if j*num_reps <= i <= (j+1)*num_reps]
         test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
         valid_inds[j]= [i for i in valid_indices if j*num_reps <= i <= (j+1)*num_reps]
 
     TOL = 1e-6
     max_iter = 1000
     max_iter_outer = 30
-    numBoots = 100
-    numSamples= 100
-    N_train = len(train_indices)
+    numBoots = 1000
+    numSamples= 1000
+    N_train = len(context_inds[context_val])
     main_func()
+
 
 
