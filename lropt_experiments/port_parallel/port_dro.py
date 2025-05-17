@@ -108,6 +108,8 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     trainer = lropt.Trainer(prob)
     settings = lropt.TrainerSettings()
     settings.data = data
+    settings.cvar_eval = True
+    settings.target_eta = 0.1
     result_grid = trainer.grid(rholst=eps_list, init_A=np.eye(n),
                         init_b=np.zeros(n), seed=5,
                         init_alpha=0., test_percentage=cfg.test_percentage, validate_percentage = cfg.validate_percentage, quantiles = (0.3, 0.7),settings = settings)
@@ -173,7 +175,7 @@ if __name__ == "__main__":
     R = 10
     initseed = 0
     n = n_list[idx]
-    N = 500
+    N = 2000
     num_context = 20
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)
@@ -182,6 +184,7 @@ if __name__ == "__main__":
     sig = np.vstack([sig]*num_reps)
     mu = np.vstack([mu]*num_reps)
     context = np.vstack([context]*num_reps)
+    np.random.seed(5)
     test_valid_indices = np.random.choice(N,int((test_p+0.2)*N), replace=False)
     test_indices = test_valid_indices[:int((test_p)*N)]
     valid_indices = test_valid_indices[int((test_p)*N):]

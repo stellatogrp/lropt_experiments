@@ -76,7 +76,7 @@ def calc_eval(x,t,u,eta):
         val_cur = -x@u[i]
         val+= val_cur
         vio += (val_cur >= t)
-    return cvar_loss, vio/u.shape[0]
+    return -cvar_loss, vio/u.shape[0]
 
 
 def portfolio_exp(cfg,hydra_out_dir,seed):
@@ -94,7 +94,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         else: 
             data_gen = True
 
-    if cfg.eta == 0.05 and cfg.obj_scale==0.5:
+    if cfg.eta == 0.05 and cfg.obj_scale== 1:
         context_evals = 0
         context_probs = 0
         context_objs = 0
@@ -113,7 +113,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             eval, prob_vio = calc_eval(x_s.value, t_s.value,data[test_inds[j]],cfg.target_eta)
             context_evals += eval
             context_probs += prob_vio
-            context_obj += t_s.value
+            context_objs += t_s.value
 
         
         context_evals = context_evals/num_context
@@ -267,7 +267,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     except:
         print("compare_failed")
 
-    if cfg.eta == 0.05 and cfg.obj_scale == 0.5:
+    if cfg.eta == 0.05 and cfg.obj_scale == 1:
         settings.init_rho = cfg.init_rho
         settings.num_iter = 1
         settings.initialize_predictor = True
@@ -302,7 +302,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         beg2, end2 = 0, 100
         plt.figure(figsize=(15, 4))
         
-        if cfg.eta ==0.05 and cfg.obj_scale == 0.5:
+        if cfg.eta == 0.05 and cfg.obj_scale == 1:
             plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
                 dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
             plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
@@ -343,10 +343,10 @@ def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     # print(f"Current working directory: {os.getcwd()}")
     njobs = get_n_processes(30)
-    # Parallel(n_jobs=njobs)(
-    #     delayed(portfolio_exp)(cfg,hydra_out_dir,r) for r in range(R))
-    for r in range(R):
-        portfolio_exp(cfg,hydra_out_dir,r)
+    Parallel(n_jobs=njobs)(
+        delayed(portfolio_exp)(cfg,hydra_out_dir,r) for r in range(R))
+    # for r in range(R):
+    #     portfolio_exp(cfg,hydra_out_dir,r)
     
 
 if __name__ == "__main__":
@@ -363,7 +363,7 @@ if __name__ == "__main__":
     R = 10
     initseed = seed_list[idx]
     n = n_list[idx]
-    N = 2000
+    N = 1000
     num_context = 20
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)

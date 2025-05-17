@@ -8,12 +8,12 @@ hydra:
   mode: MULTIRUN
   sweeper:
     params:
-      eta: 0.05,0.10,0.15,0.20,0.23,0.25,0.30,0.33,0.35,0.40,0.45
-      obj_scale: 0.5,0.75,1,1.2,1.5
+      eta: 0.05,0.08,0.09,0.10,0.12,0.15
+      obj_scale: 1,1.5,2.5,3,5,8,10
 eta: 0.15
 obj_scale: 1
 seed: 0
-lr: 0.05
+lr: 0.01
 num_iter: 300
 optimizer: "Adam"
 init_rho: 1
@@ -36,8 +36,8 @@ validate_percentage: 0.2
 test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
-Nval: 2000
-nval: 30
+Nval: 1000
+nval: 10
 Rval: 10
 seedvals: 0
 knnnum: .1
@@ -48,6 +48,6 @@ Fmults: 0.2
 knn_mult: 0.95
 deep: False
 expected: True
-use_eval: False
+use_eval: True
 cvar_eval: True
 target_eta: 0.1

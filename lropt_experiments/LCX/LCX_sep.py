@@ -167,14 +167,20 @@ def gen_problem(Gamma,eps,data,x,datamax):
         obj, astar, bstar = all_cuts(u.value,v.value,z.value,data,eps,Gamma,datamax)
     return prob.objective.value, u.value
 
-def calc_eval(x,t,u):
+def calc_eval(x,t,u,eta):
     val = 0
     vio = 0
+    port_values = u@x
+    quantile_index = int((1-eta) * len(port_values)) 
+    port_sorted = np.sort(port_values)[::-1]  # Descending sort
+    quantile_value = port_sorted[quantile_index]
+    port_le_quant = (port_values <= quantile_value).astype(float)
+    cvar_loss = np.sum(port_values * port_le_quant) / np.sum(port_le_quant)
     for i in range(u.shape[0]):
-        val_cur = x@u[i]
+        val_cur = -x@u[i]
         val+= val_cur
-        vio += (val_cur <= t)
-    return -val/u.shape[0], vio/u.shape[0]
+        vio += (val_cur >= t)
+    return -cvar_loss, vio/u.shape[0], val/u.shape[0]
      
 def min_max(eps,alpha,data,datamax,test,validate):
     Gamma = calc_ab_thresh(data, alpha, numBoots, numSamples)
@@ -199,9 +205,9 @@ def min_max(eps,alpha,data,datamax,test,validate):
         prob, x, t = create_max(u_set)
         prob.solve()
         objnew = prob.objective.value
-    eval, prob_vio = calc_eval(x.value, t.value,test)
-    eval_vali, prob_vali = calc_eval(x.value, t.value,validate)
-    return eval, prob_vio, eval_vali, prob_vali
+    eval, prob_vio, test_avg = calc_eval(x.value, t.value,test,0.1)
+    eval_vali, prob_vali, vali_avg = calc_eval(x.value, t.value,validate,0.1)
+    return eval, prob_vio, eval_vali, prob_vali, t.value, test_avg, vali_avg
 
 def lcx_exp(cfg,hydra_out_dir,seed):
     seed = initseed + 10*seed
@@ -215,8 +221,8 @@ def lcx_exp(cfg,hydra_out_dir,seed):
     eps = cfg.eps
     alpha = cfg.alpha
     try:
-        eval, prob_vio,eval_vali, prob_vali = min_max(eps,alpha,train,datamax,test,validate)
-        data_df = {"context_val":context_val,'seed': seed, "alpha":alpha, "eps": eps,"test_lcx_prob": prob_vio,"test_lcx_obj":eval,"valid_lcx_prob": prob_vali,"valid_lcx_obj":eval_vali, 'time':time.time() - start_time}
+        eval, prob_vio,eval_vali, prob_vali, in_sample, test_avg, vali_avg = min_max(eps,alpha,train,datamax,test,validate)
+        data_df = {"context_val":context_val,'seed': seed, "alpha":alpha, "eps": eps,"test_lcx_prob": prob_vio,"test_lcx_obj":eval,"valid_lcx_prob": prob_vali,"valid_lcx_obj":eval_vali, 'time':time.time() - start_time, "in_val": in_sample, "test_avg": test_avg, "valid_avg": vali_avg}
         single_row_df = pd.DataFrame(data_df, index=[0])
         single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+str(context_val)+'_'+"vals_lcx.csv",index=False)
     except:
