@@ -273,9 +273,9 @@ if __name__ == "__main__":
 
     TOL = 1e-6
     max_iter = 1000
-    max_iter_outer = 30
-    numBoots = 1000
-    numSamples= 1000
+    max_iter_outer = 100
+    numBoots = 10000
+    numSamples= 10000
     N_train = len(context_inds[context_val])
     main_func()
 

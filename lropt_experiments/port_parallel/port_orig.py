@@ -197,7 +197,8 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     settings.validate_frequency = cfg.validate_frequency
     settings.initialize_predictor = cfg.initialize_predictor
     settings.num_iter = cfg.num_iter
-    settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200)
+    settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
+    # settings.predictor = lropt.CovPredictor()
     # settings.predictor = lropt.DeepNormalModel()
     settings.data = data
     settings.cost_func = True
@@ -363,7 +364,7 @@ if __name__ == "__main__":
     R = 10
     initseed = seed_list[idx]
     n = n_list[idx]
-    N = 1000
+    N = 2000
     num_context = 20
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)

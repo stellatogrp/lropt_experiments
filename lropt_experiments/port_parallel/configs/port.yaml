@@ -13,10 +13,10 @@ hydra:
 eta: 0.15
 obj_scale: 1
 seed: 0
-lr: 0.01
+lr: 0.001
 num_iter: 300
 optimizer: "Adam"
-init_rho: 6
+init_rho: 4
 init_lam: 1
 init_mu: 1
 mu_multiplier: 1.005
@@ -36,7 +36,7 @@ validate_percentage: 0.2
 test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
-Nval: 1000
+Nval: 2000
 nval: 30
 Rval: 10
 seedvals: 0
@@ -47,7 +47,9 @@ addval: 0.1
 Fmults: 0.2
 knn_mult: 0.95
 deep: False
+cov: False
 expected: True
 use_eval: False
 cvar_eval: True
 target_eta: 0.1
+knn_mult_train: 0.4
