@@ -37,7 +37,7 @@ test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
 Nval: 2000
-nval: 30
+nval: 10
 Rval: 10
 seedvals: 0
 knnnum: .1
@@ -46,10 +46,10 @@ epslimtrain: 0.510120
 addval: 0.1
 Fmults: 0.2
 knn_mult: 0.95
-deep: False
+deep: True
 cov: False
 expected: True
 use_eval: False
 cvar_eval: True
 target_eta: 0.1
-knn_mult_train: 0.4
+knn_mult_train: 0.3

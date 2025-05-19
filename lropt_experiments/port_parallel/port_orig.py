@@ -76,7 +76,7 @@ def calc_eval(x,t,u,eta):
         val_cur = -x@u[i]
         val+= val_cur
         vio += (val_cur >= t)
-    return -cvar_loss, vio/u.shape[0]
+    return -cvar_loss, vio/u.shape[0], val/u.shape[0]
 
 
 def portfolio_exp(cfg,hydra_out_dir,seed):
@@ -98,6 +98,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         context_evals = 0
         context_probs = 0
         context_objs = 0
+        avg_vals = 0
         for j in range(num_context):
             u = lropt.UncertainParameter(n,
                                     uncertainty_set=lropt.Scenario(
@@ -110,19 +111,22 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
             prob_context = lropt.RobustProblem(objective, constraints)
             prob_context.solve()
-            eval, prob_vio = calc_eval(x_s.value, t_s.value,data[test_inds[j]],cfg.target_eta)
+            eval, prob_vio, avg = calc_eval(x_s.value, t_s.value,data[test_inds[j]],cfg.target_eta)
             context_evals += eval
             context_probs += prob_vio
+            avg_vals += avg
             context_objs += t_s.value
 
         
         context_evals = context_evals/num_context
         context_probs = context_probs/num_context
         context_objs = context_objs/num_context
+        context_avg = avg_vals/num_context
 
         nonrob_evals = 0
         nonrob_probs = 0
         nonrob_objs = 0
+        avg_vals = 0
         for j in range(num_context):
             u = lropt.UncertainParameter(n,
                                     uncertainty_set=lropt.Scenario(
@@ -135,15 +139,17 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
             prob_nonrob = lropt.RobustProblem(objective, constraints)
             prob_nonrob.solve()
-            eval, prob_vio = calc_eval(x_s.value, t_s.value,data[test_inds[j]],cfg.target_eta)
+            eval, prob_vio, avg = calc_eval(x_s.value, t_s.value,data[test_inds[j]],cfg.target_eta)
             nonrob_evals += eval
             nonrob_probs += prob_vio
             nonrob_objs += t_s.value
+            avg_vals += avg
         nonrob_evals = nonrob_evals / (num_context)
         nonrob_probs = nonrob_probs / (num_context)
         nonrob_objs = nonrob_objs/num_context
+        nonrob_avg = avg_vals/num_context
 
-        data_df = {'seed': initseed+10*seed, "a_seed":finseed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals, "scenario_in": context_objs, "nonrob_in": nonrob_objs}
+        data_df = {'seed': initseed+10*seed, "a_seed":finseed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals, "scenario_in": context_objs, "nonrob_in": nonrob_objs, "scenario_avg":context_avg, "nonrob_avg": nonrob_avg}
         single_row_df = pd.DataFrame(data_df, index=[0])
         single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals_nonrob.csv",index=False)
 
@@ -199,7 +205,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     settings.num_iter = cfg.num_iter
     settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
     # settings.predictor = lropt.CovPredictor()
-    # settings.predictor = lropt.DeepNormalModel()
+    # settings.predictor = lropt.DeepNormalModel(knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
     settings.data = data
     settings.cost_func = True
     settings.use_eval = cfg.use_eval
@@ -268,7 +274,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     except:
         print("compare_failed")
 
-    if cfg.eta == 0.05 and cfg.obj_scale == 1:
+    if cfg.eta == 1 and cfg.obj_scale == 1:
         settings.init_rho = cfg.init_rho
         settings.num_iter = 1
         settings.initialize_predictor = True
@@ -303,7 +309,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         beg2, end2 = 0, 100
         plt.figure(figsize=(15, 4))
         
-        if cfg.eta == 0.05 and cfg.obj_scale == 1:
+        if cfg.eta == 1 and cfg.obj_scale == 1:
             plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
                 dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
             plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
@@ -364,7 +370,7 @@ if __name__ == "__main__":
     R = 10
     initseed = seed_list[idx]
     n = n_list[idx]
-    N = 2000
+    N = 1000
     num_context = 20
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)
