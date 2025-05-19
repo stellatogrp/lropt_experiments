@@ -2,7 +2,7 @@
 #SBATCH --job-name=porttest
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=15
+#SBATCH --cpus-per-task=10
 #SBATCH --mem-per-cpu=1G
 #SBATCH --time=23:40:00
 #SBATCH -o /scratch/gpfs/iywang/lropt_revision/output/portfolio/port_test_%A_.txt

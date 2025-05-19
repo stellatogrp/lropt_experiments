@@ -163,7 +163,7 @@ def gen_problem(Gamma,eps,data,x,datamax):
         constraints += [tnew[iter][0]+tnew[iter][1]<= z*cp.sum((cp.maximum(cp.matmul(data, astar) - bstar, 0)))/N_train + Gamma]
         prob = cp.Problem(objective,constraints)
         prob.solve()
-        print(iter,obj, prob.objective.value)
+        # print(iter,obj, prob.objective.value)
         obj, astar, bstar = all_cuts(u.value,v.value,z.value,data,eps,Gamma,datamax)
     return prob.objective.value, u.value
 
@@ -244,10 +244,10 @@ if __name__ == "__main__":
     idx = int(os.environ["SLURM_ARRAY_TASK_ID"])
     n_list = [10,20,30]
     context_list = np.arange(20)
-    n = 10
+    n = 30
     context_val = context_list[idx]
     # n_list[idx]
-    N = 2000
+    N = 1000
     R = 10
     num_context = 20
     test_p = 0.5

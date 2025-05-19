@@ -37,8 +37,8 @@ validate_percentage: 0.2
 test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
-Nval: 2000
-nval: 30
+Nval: 1000
+nval: 10
 Rval: 10
 seedvals: 0
 epslim: 0.010360
