@@ -16,7 +16,7 @@ seed: 0
 lr: 0.01
 num_iter: 300
 optimizer: "Adam"
-init_rho: 1
+init_rho: 6
 init_lam: 1
 init_mu: 1
 mu_multiplier: 1.005
@@ -37,7 +37,7 @@ test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
 Nval: 1000
-nval: 10
+nval: 30
 Rval: 10
 seedvals: 0
 knnnum: .1
@@ -48,6 +48,6 @@ Fmults: 0.2
 knn_mult: 0.95
 deep: False
 expected: True
-use_eval: True
+use_eval: False
 cvar_eval: True
 target_eta: 0.1

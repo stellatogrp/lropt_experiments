@@ -8,15 +8,15 @@
 #SBATCH -o /scratch/gpfs/iywang/lropt_revision/output/portfolio/portfolio_test_%A_.txt
 #SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT
 #SBATCH --mail-user=iabirina@hotmail.com
-#SBATCH --array=0      # job array
+#SBATCH --array=2     # job array
 
 module purge
 module load anaconda3/2023.9
 conda activate lropt_rev
 
-# python lropt_experiments/port_parallel/port_orig.py --config-name=port.yaml
+python lropt_experiments/port_parallel/port_orig.py --config-name=port.yaml
 # python lropt_experiments/port_parallel/port_dro.py --config-name=port_dro.yaml
-python lropt_experiments/port_parallel/port_delage_orig.py --config-name=port_delage.yaml
+# python lropt_experiments/port_parallel/port_delage_orig.py --config-name=port_delage.yaml
 
 #--config-name=port.yaml seed=10 eta=10 
 
