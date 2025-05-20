@@ -15,4 +15,5 @@ eps: 0.05
 nval: 30
 Nval: 1000
 sepcontext: True
-maxouteriter: 100
+maxouteriter: 60
+numBoots: 10000

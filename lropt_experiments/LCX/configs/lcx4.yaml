@@ -8,11 +8,13 @@ hydra:
   mode: MULTIRUN
   sweeper:
     params:
-      alpha: 0.4,0.5
-      eps: 0.10,0.15,0.20,0.30,0.40
+      alpha: 0.10
+      eps: 0.10
 alpha: 0.05
 eps: 0.05
 nval: 10
-Nval: 1000
+Nval: 2000
 sepcontext: True
-maxouteriter: 30
+maxouteriter: 60
+numBoots: 10000
+

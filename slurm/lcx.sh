@@ -14,7 +14,7 @@ module purge
 module load anaconda3/2023.9
 conda activate lropt_rev
 
-python lropt_experiments/LCX/LCX_sep.py --config-name=lcx1.yaml
+python lropt_experiments/LCX/LCX_sep2.py --config-name=lcx2.yaml
 # python lropt_experiments/port_parallel/port_dro.py --config-name=port_dro.yaml
 # python lropt_experiments/port_parallel/port_delage.py --config-name=port_delage.yaml
 
