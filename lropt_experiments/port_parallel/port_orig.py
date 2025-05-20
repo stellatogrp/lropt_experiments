@@ -208,8 +208,6 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     # settings.predictor = lropt.DeepNormalModel(knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
     settings.data = data
     settings.cost_func = True
-    settings.use_eval = cfg.use_eval
-    settings.cvar_eval = cfg.cvar_eval
     settings.target_eta = cfg.target_eta
     print("training start")
     try:
@@ -220,7 +218,6 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_trained_linear.pth')
     except:
         print("training failed")
-
         # result_grid4 = trainer.grid(rholst=[0.5,1,2],init_A=A_fin, init_b=b_fin, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result._predictor)
         # dfgrid4 = result_grid4.df
         # dfgrid4 = dfgrid4.drop(columns=["z_vals","x_vals"])
@@ -266,34 +263,37 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         findfs = []
         for rho in eps_list:
             df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
-            data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime,"valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0], "valid_in": df_valid["Validate_obj"][0], "test_in": df_test["Test_obj"][0], "avg_val": df_test["Test_other_obj"]}
+            data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_cvar"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_cvar"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime,"valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0], "valid_in": df_valid["Validate_insample"][0], "test_in": df_test["Test_insample"][0], "avg_val": df_test["Test_val"]}
             single_row_df = pd.DataFrame(data_df, index=[0])
             findfs.append(single_row_df)
         findfs = pd.concat(findfs)
         findfs.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
     except:
-        print("compare_failed")
+        print("compare failed")
 
-    if cfg.eta == 1 and cfg.obj_scale == 1:
+    if cfg.eta == 0.05 and cfg.obj_scale == 1:
         settings.init_rho = cfg.init_rho
         settings.num_iter = 1
-        settings.initialize_predictor = True
-        result_grid = trainer.grid(rholst=eps_list, init_A=init,
-                            init_b=init_bval, seed=5,
-                            init_alpha=0., test_percentage=test_p, quantiles = (0.3, 0.7),settings=settings)
+        settings.contextual = False
+        result_grid = trainer.grid(rholst=eps_list, settings=settings)
         dfgrid = result_grid.df
         dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
         dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'mean_var_grid.csv')
 
 
         # untrained linear
+        settings.contextual = True
+        settings.initialize_predictor = True
         settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
         # settings.predictor = lropt.CovPredictor()
         settings.num_iter = 1
         result2 = trainer.train(settings=settings)
         A_fin2 = result2.A
         b_fin2 = result2.b
-        result_grid3 = trainer.grid(rholst=eps_list,init_A=A_fin2, init_b=b_fin2, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result2._predictor,settings=settings)
+        settings.init_A = A_fin2
+        settings.init_b = b_fin2
+        settings.predictor = result2._predictor
+        result_grid3 = trainer.grid(rholst=eps_list,settings=settings)
         dfgrid3 = result_grid3.df
         dfgrid3 = dfgrid3.drop(columns=["z_vals","x_vals"])
         dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_pretrained_grid.csv')
@@ -357,7 +357,10 @@ def main_func(cfg):
     
 
 if __name__ == "__main__":
-    idx = int(os.environ["SLURM_ARRAY_TASK_ID"])
+    try:
+        idx = int(os.environ["SLURM_ARRAY_TASK_ID"])
+    except:
+        idx = 0
     # parser = argparse.ArgumentParser()
     # parser.add_argument('--foldername', type=str,
     #                     default="portfolio/", metavar='N')

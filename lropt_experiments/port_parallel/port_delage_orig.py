@@ -140,7 +140,6 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     settings.predictor = lropt.DeepNormalModel()
     settings.data = data
     settings.cost_func = False
-    settings.cvar_eval = True
     settings.target_eta = cfg.target_eta
     try: 
         result = trainer.train(settings=settings)
@@ -161,7 +160,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         findfs = []
         for rho in eps_list:
             df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
-            data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0],"time":solvetime, "valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0],"valid_in": df_valid["Validate_obj"][0], "test_in": df_test["Test_obj"][0], "avg_val": df_test["Test_other_obj"]}
+            data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_cvar"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_cvar"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime,"valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0], "valid_in": df_valid["Validate_insample"][0], "test_in": df_test["Test_insample"][0], "avg_val": df_test["Test_val"]}
             single_row_df = pd.DataFrame(data_df, index=[0])
             findfs.append(single_row_df)
         findfs = pd.concat(findfs)
@@ -191,7 +190,7 @@ if __name__ == "__main__":
     # arguments = parser.parse_args()
     seed_list = [0,0,0]
     n_list = [10,20,30]
-    R = 10
+    R = 1
     initseed = seed_list[idx]
     n = n_list[idx]
     N = 2000

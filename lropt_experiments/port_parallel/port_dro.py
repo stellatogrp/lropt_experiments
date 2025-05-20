@@ -108,11 +108,13 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     trainer = lropt.Trainer(prob)
     settings = lropt.TrainerSettings()
     settings.data = data
-    settings.cvar_eval = True
     settings.target_eta = 0.1
-    result_grid = trainer.grid(rholst=eps_list, init_A=np.eye(n),
-                        init_b=np.zeros(n), seed=5,
-                        init_alpha=0., test_percentage=cfg.test_percentage, validate_percentage = cfg.validate_percentage, quantiles = (0.3, 0.7),settings = settings)
+    settings.init_A = np.eye(n)
+    settings.init_b = np.zeros(n)
+    settings.seed = 5
+    settings.test_percentage=cfg.test_percentage
+    settings.validate_percentage = cfg.validate_percentage
+    result_grid = trainer.grid(rholst=eps_list,settings = settings)
     dfgrid = result_grid.df
     dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
     dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'dro_grid.csv')
