@@ -60,18 +60,26 @@ def gen_demand_varied(sig,mu,d,N,seed=399):
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
-def calc_eval(u,r,y,Y,t,h,d,s,L):
+def calc_eval(u,r,y,Y,t,h,d,s,L,eta):
     val = 0
     vio = 0
+    vals = []
     for i in range(u.shape[0]):
         val_cur = -r@y - r@Y@u[i] + (t+h)@s
         val+= val_cur
+        vals.append(val_cur)
         sum = (val_cur >= L)
         for j in range(n):
             sum += np.sum((y+Y@u[i] - s) >= 0)
             sum+= np.sum((y + Y@u[i] - u[i]) >= 0)
         vio += (sum >= 0.0001)
-    return val/u.shape[0], vio/u.shape[0]
+    vals = -np.array(vals)
+    quantile_index = int((1-eta) * len(vals)) 
+    vals_sorted = np.sort(vals)[::-1]  # Descending sort
+    quantile_value = vals_sorted[quantile_index]
+    vals_le_quant = (vals <= quantile_value).astype(float)
+    cvar_loss = np.sum(vals * vals_le_quant) / np.sum(vals_le_quant)
+    return -cvar_loss, vio/u.shape[0],val/u.shape[0]
 
 def inv_exp(cfg,hydra_out_dir,seed):
     finseed = initseed + 10*seed
@@ -89,9 +97,11 @@ def inv_exp(cfg,hydra_out_dir,seed):
             else: 
                 data_gen = True
 
-        if cfg.eta == 1 and cfg.obj_scale==0.5:
+        if cfg.eta == 0.01 and cfg.obj_scale==0.5:
             context_evals = 0
             context_probs = 0
+            context_objs = 0
+            avg_vals = 0
             for j in range(num_context):
                 u = lropt.UncertainParameter(n,
                                         uncertainty_set=lropt.Scenario(
@@ -119,14 +129,20 @@ def inv_exp(cfg,hydra_out_dir,seed):
                 # formulate Robust Problem
                 prob_context = lropt.RobustProblem(objective, constraints)
                 prob_context.solve()
-                eval, prob_vio = calc_eval(data[test_inds[j]],r,y.value,Y.value,t,h,d,s.value,L.value)
+                eval, prob_vio,avg = calc_eval(data[test_inds[j]],r,y.value,Y.value,t,h,d,s.value,L.value,cfg.target_eta)
                 context_evals += eval
                 context_probs += prob_vio
+                avg_vals += avg
+                context_objs += L.value
             context_evals = context_evals/num_context
             context_probs = context_probs/num_context
+            context_objs = context_objs/num_context
+            context_avg = avg_vals/num_context
 
             nonrob_evals = 0
             nonrob_probs = 0
+            nonrob_objs = 0
+            avg_vals = 0
             for j in range(num_context):
                 u = lropt.UncertainParameter(n,
                                         uncertainty_set=lropt.Scenario(
@@ -154,12 +170,17 @@ def inv_exp(cfg,hydra_out_dir,seed):
                 # formulate Robust Problem
                 prob_context = lropt.RobustProblem(objective, constraints)
                 prob_context.solve()
-                eval, prob_vio = calc_eval(data[test_inds[j]],r,y.value,Y.value,t,h,d,s.value,L.value)
+                eval, prob_vio,avg = calc_eval(data[test_inds[j]],r,y.value,Y.value,t,h,d,s.value,L.value,cfg.target_eta)
                 nonrob_evals += eval
                 nonrob_probs += prob_vio
+                nonrob_objs += L.value
+                avg_vals += avg
             nonrob_evals = nonrob_evals / (num_context)
             nonrob_probs = nonrob_probs / (num_context)
-            data_df = {'seed': initseed+10*seed, "a_seed":finseed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals}
+            nonrob_objs = nonrob_objs/num_context
+            nonrob_avg = avg_vals/num_context
+            
+            data_df = {'seed': initseed+10*seed, "a_seed":finseed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals, "scenario_in": context_objs, "nonrob_in": nonrob_objs, "scenario_avg":context_avg, "nonrob_avg": nonrob_avg}
             single_row_df = pd.DataFrame(data_df, index=[0])
             single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals_nonrob.csv",index=False)
 
@@ -227,7 +248,8 @@ def inv_exp(cfg,hydra_out_dir,seed):
         # settings.predictor = lropt.DeepNormalModel()
         settings.data=data
         settings.cost_func = True
-        settings.use_eval = cfg.use_eval
+        settings.target_eta = cfg.target_eta
+
         try: 
             result = trainer.train(settings=settings)
             df = result.df
@@ -250,8 +272,8 @@ def inv_exp(cfg,hydra_out_dir,seed):
         try:
             findfs = []
             for rho in eps_list:
-                df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result._predictor], rho_list=[rho])
-                data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime}
+                df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
+                data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_cvar"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_cvar"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime,"valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0], "valid_in": df_valid["Validate_insample"][0], "test_in": df_test["Test_insample"][0], "avg_val": df_test["Test_val"][0]}
                 single_row_df = pd.DataFrame(data_df, index=[0])
                 findfs.append(single_row_df)
                 tempdfs = pd.concat(findfs)
@@ -261,24 +283,27 @@ def inv_exp(cfg,hydra_out_dir,seed):
         except:
             print("compare failed")
 
-        if cfg.eta == 1 and cfg.obj_scale==0.5:
+        if cfg.eta == 0.01 and cfg.obj_scale==0.5:
             settings.init_rho = cfg.init_rho
             settings.num_iter = 1
-            settings.initialize_predictor = True
-            result_grid = trainer.grid(rholst=eps_list_train, init_A=init,
-                                init_b=init_bval, seed=5,
-                                init_alpha=0., test_percentage=test_p, quantiles = (0.3, 0.7),settings=settings)
+            settings.contextual = False
+            result_grid = trainer.grid(rholst=eps_list,settings=settings)
             dfgrid = result_grid.df
             dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
             dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'mean_var_grid.csv')
 
             # untrained linear
+            settings.contextual = True
+            settings.initialize_predictor = True
             settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 100,knn_cov=True,n_neighbors=int(N*0.3*0.1),knn_scale = cfg.knn_mult)
             settings.num_iter = 1
             result2 = trainer.train(settings=settings)
             A_fin2 = result2.A
             b_fin2 = result2.b
-            result_grid3 = trainer.grid(rholst=eps_list_train,init_A=A_fin2, init_b=b_fin2, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result2._predictor,settings=settings)
+            settings.init_A = A_fin2
+            settings.init_b = b_fin2
+            settings.predictor = result2._predictor
+            result_grid3 = trainer.grid(rholst=eps_list,settings=settings)
             dfgrid3 = result_grid3.df
             dfgrid3 = dfgrid3.drop(columns=["z_vals","x_vals"])
             dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_untrained_grid.csv')
@@ -294,7 +319,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
         beg2, end2 = 0, 100
         plt.figure(figsize=(15, 4))
         
-        if cfg.eta == 1 and cfg.obj_scale==0.5:
+        if cfg.eta == 0.01 and cfg.obj_scale==0.5:
             plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
                 dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
             plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
@@ -331,7 +356,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
     except:
         return None
 
-@hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/inventory_parallel/configs",config_name = "inv.yaml", version_base = None)
+@hydra.main(config_path="/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/inventory_parallel/configs",config_name = "inv.yaml", version_base = None)
 def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     # print(f"Current working directory: {os.getcwd()}")
@@ -343,7 +368,10 @@ def main_func(cfg):
     
 
 if __name__ == "__main__":
-    idx = int(os.environ["SLURM_ARRAY_TASK_ID"])
+    try:
+        idx = int(os.environ["SLURM_ARRAY_TASK_ID"])
+    except:
+        idx = 0
     # parser = argparse.ArgumentParser()
     # parser.add_argument('--foldername', type=str,
     #                     default="portfolio/", metavar='N')
@@ -353,12 +381,10 @@ if __name__ == "__main__":
     # arguments = parser.parse_args()
     seed_list = [0,50]
     N_list = [1000,1000]
-    # contxtual = [T,T,F,T,T,T]
-    R = 5
+    R = 10
     initseed = seed_list[idx]
     test_p = 0.5
-    N = N_list[idx]
-    #1000
+    N = 1000
     n = 10
     m = 4
     #m_list[idx]
@@ -389,8 +415,8 @@ if __name__ == "__main__":
     for j in range(num_context):
         context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
         test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
-    eps_list= np.concat([np.logspace(-4,-1,10),np.linspace(0.11,1,15),np.linspace(1.1,5,25)])
+    eps_list= np.concat([np.logspace(-4,-1,3),np.linspace(0.11,2,6),np.linspace(2.05,3,18),np.linspace(3.1,5.5,10)])
     # np.linspace(1, 4, 50)
-    eps_list_train = np.linspace(1, 4, 50)
+    # eps_list_train = np.linspace(1, 4, 50)
     main_func()
 
