@@ -59,14 +59,22 @@ def gen_demand_cor(N,seed,x1, x2):
     return np.vstack(points_list)
 
 # uncertain data depends on the contexts
-def calc_eval(x,p,k,u,t):
+def calc_eval(x,p,k,u,t,eta):
     val = 0
     vio = 0
+    vals = []
     for i in range(u.shape[0]):
         val_cur = k@x + np.max([-p[0]*x[0] - p[1]*x[1],-p[0]*x[0] - p[1]*u[i][1], -p[0]*u[i][0] - p[1]*x[1], -p[0]*u[i][0]- p[1]*u[i][1]]) 
+        vals.append(val_cur)
         val+= val_cur
         vio += (val_cur >= t)
-    return val/u.shape[0], vio/u.shape[0]
+    vals = -np.array(vals)
+    quantile_index = int((1-eta) * len(vals)) 
+    vals_sorted = np.sort(vals)[::-1]  # Descending sort
+    quantile_value = vals_sorted[quantile_index]
+    vals_le_quant = (vals <= quantile_value).astype(float)
+    cvar_loss = np.sum(vals * vals_le_quant) / np.sum(vals_le_quant)
+    return -cvar_loss, vio/u.shape[0],val/u.shape[0]
 
 def news_exp(cfg,hydra_out_dir,seed):
     seed = init_seed + seed
@@ -77,10 +85,11 @@ def news_exp(cfg,hydra_out_dir,seed):
     init = sc.linalg.sqrtm(np.cov(train.T))
     init_bval = np.mean(train, axis=0)
 
-    if cfg.eta == 0.01:
-
+    if cfg.eta == 0.01 and cfg.obj_scale == 1:
         context_evals = 0
         context_probs = 0
+        context_objs = 0
+        avg_vals = 0
         # solve for each context and average
         for j in range(num_context):
             u = lropt.UncertainParameter(n,
@@ -100,14 +109,20 @@ def news_exp(cfg,hydra_out_dir,seed):
 
             prob_sc = lropt.RobustProblem(objective, constraints)
             prob_sc.solve()
-            eval, prob_vio = calc_eval(x_s.value, init_p_data[j], init_k_data[j],data[test_inds[j]],t1.value)
+            eval, prob_vio, avg = calc_eval(x_s.value, init_p_data[j], init_k_data[j],data[test_inds[j]],t1.value,cfg.target_eta)
             context_evals += eval
             context_probs += prob_vio
+            avg_vals += avg
+            context_objs += t1.value
         context_evals = context_evals/num_context
         context_probs = context_probs/num_context
+        context_objs = context_objs/num_context
+        context_avg = avg_vals/num_context
 
         nonrob_evals = 0
         nonrob_probs = 0
+        nonrob_objs = 0
+        avg_vals = 0
         for j in range(num_context):
             u = lropt.UncertainParameter(n,
                                     uncertainty_set=lropt.Scenario(
@@ -127,13 +142,18 @@ def news_exp(cfg,hydra_out_dir,seed):
             prob_sc = lropt.RobustProblem(objective, constraints)
             prob_sc.solve()
 
-            eval, prob_vio = calc_eval(x_s.value, init_p_data[j], init_k_data[j],data[test_inds[j]],t1.value)
+            eval, prob_vio,avg = calc_eval(x_s.value, init_p_data[j], init_k_data[j],data[test_inds[j]],t1.value,cfg.target_eta)
             nonrob_evals += eval
             nonrob_probs += prob_vio
+            nonrob_objs += t1.value
+            avg_vals += avg
+
         nonrob_evals = nonrob_evals / (num_context)
         nonrob_probs = nonrob_probs / (num_context)
+        nonrob_objs = nonrob_objs/num_context
+        nonrob_avg = avg_vals/num_context
 
-        data_df = {'seed': seed, "a_seed":seed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals}
+        data_df = {'seed': seed, "a_seed":seed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals, "scenario_in": context_objs, "nonrob_in": nonrob_objs, "scenario_avg":context_avg, "nonrob_avg": nonrob_avg}
         single_row_df = pd.DataFrame(data_df, index=[0])
         single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals_nonrob.csv",index=False)
 
@@ -190,9 +210,8 @@ def news_exp(cfg,hydra_out_dir,seed):
     settings.initialize_predictor = cfg.initialize_predictor
     settings.data = data
     settings.cost_func = True
-    settings.use_eval = cfg.use_eval
-
-    if cfg.eta == 0.01:
+    settings.target_eta = cfg.target_eta
+    if cfg.eta == 0.01 and cfg.obj_scale == 1:
         # no training (steps = 1, look at initalized set)
         settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
         settings.num_iter = 1 
@@ -201,23 +220,28 @@ def news_exp(cfg,hydra_out_dir,seed):
         b_fin2 = result2.b
         torch.save(result2._predictor.state_dict(),hydra_out_dir+'/'+'pretrained_linear.pth')
         # untrained linear
-        result_grid3 = trainer.grid(rholst=eps_list,init_A=A_fin2, init_b=b_fin2, seed=s,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result2._predictor)
+        settings.init_A = A_fin2
+        settings.init_b = b_fin2
+        settings.predictor = result2._predictor
+        result_grid3 = trainer.grid(rholst=eps_list,settings=settings)
         dfgrid3 = result_grid3.df
         dfgrid3 = dfgrid3.drop(columns=["z_vals","x_vals"])
-        dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_untrained_grid.csv')
+        dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_pretrained_grid.csv')
 
     # training
     try:
         settings.num_iter = cfg.num_iter
+        settings.init_A = init
+        settings.init_b = init_bval
         settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain = True,epochs = 20, lr = 0.001)
         result = trainer.train(settings=settings)
-        df = result.df
-        df = df.drop(columns=["grad"])
-        df.to_csv(hydra_out_dir+'/'+'linear_train.csv')
+        # df = result.df
+        # df = df.drop(columns=["grad"])
+        # df.to_csv(hydra_out_dir+'/'+'linear_train.csv')
 
-        dfval = result.df_validate
-        dfval = dfval.drop(columns=["z_vals","x_vals"])
-        dfval.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_validate.csv')
+        # dfval = result.df_validate
+        # dfval = dfval.drop(columns=["z_vals","x_vals"])
+        # dfval.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_validate.csv')
         torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'trained_linear.pth')
     except:
         print("training failed")
@@ -232,7 +256,7 @@ def news_exp(cfg,hydra_out_dir,seed):
         findfs = []
         for rho in eps_list:
             df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
-            data_df = {'seed': seed, 'rho':rho, "a_seed":seed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_val"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_val"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime,"valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0]}
+            data_df = {'seed': seed, 'rho':rho, "a_seed":seed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_cvar"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_cvar"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime,"valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0], "valid_in": df_valid["Validate_insample"][0], "test_in": df_test["Test_insample"][0], "avg_val": df_test["Test_val"][0]}
             single_row_df = pd.DataFrame(data_df, index=[0])
             findfs.append(single_row_df)
         findfs = pd.concat(findfs)
@@ -240,12 +264,11 @@ def news_exp(cfg,hydra_out_dir,seed):
     except:
         None
 
-    if cfg.eta == 0.01:
+    if cfg.eta == 0.01 and cfg.obj_scale == 1:
         # Grid search epsilon
         # mean variance set
-        result_grid = trainer.grid(rholst=eps_list, init_A=init,
-                            init_b=init_bval, seed=s,
-                            init_alpha=0., test_percentage=test_p, quantiles = (0.3, 0.7))
+        settings.contextual = False
+        result_grid = trainer.grid(rholst=eps_list,settings=settings)
         dfgrid = result_grid.df
         dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
         dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'mean_var_grid.csv')
@@ -255,7 +278,7 @@ def news_exp(cfg,hydra_out_dir,seed):
     beg2, end2 = 0, 100
     plt.figure(figsize=(15, 4))
     
-    if cfg.eta == 0.01:
+    if cfg.eta == 0.01 and cfg.obj_scale == 1:
         plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
             dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
         plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
@@ -285,7 +308,7 @@ def news_exp(cfg,hydra_out_dir,seed):
 
 
 
-@hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/news_testing/configs",config_name = "news.yaml", version_base = None)
+@hydra.main(config_path="/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/news_testing/configs",config_name = "news.yaml", version_base = None)
 def main_func(cfg: DictConfig):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     print(f"Current working directory: {os.getcwd()}")
