@@ -27,7 +27,7 @@ etas1 = [0.05,0.1,0.12,0.15,0.2,0.3]
 objs1 = [0.9,0.6,0.5,0.4,0.2,0.1]
 seeds1 = [0,10,20,30,40,50,60,70,80,90]
 foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/cvar/fixed/30_2000/"
-foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/cvar/obj_1/30_2000/"
+foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/cvar/obj_4/30_2000.1/"
 foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/cvar/DRO/30_2000/"
 foldername5 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/cvar/Delage/30_2000/"
 # foldername6 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/cvar/lcx/30_1000/"
@@ -329,7 +329,8 @@ for target in target_list:
     "test_avg": dfs_best[target]["avg_val"].mean(), "test_avg_o": dfs_best_o[target]["avg_val"].mean(), "test_avg_mv": dfs_best_mv[target]["Test_other_obj"].mean(), "test_avg_pre": dfs_best_pre[target]["Test_other_obj"].mean(), 
             # "test_avg_lcx": dfs_best_lcx[target]["test_avg"].mean(),
             "test_avg_dro": dfs_best_dro[target]["Test_other_obj"].mean(),
-            "test_avg_scene":df_nonrob["scenario_avg"].mean()
+            "test_avg_scene":df_nonrob["scenario_avg"].mean(),
+            "test_in":dfs_best[target]["test_in"].mean(), "test_in_o":dfs_best_o[target]["test_in"].mean(), "test_in_pre":dfs_best_pre[target]["Test_obj"].mean(), "test_in_mv":dfs_best_mv[target]["Test_obj"].mean(), "test_in_scene":df_nonrob["scenario_in"].mean(), "test_in_dro": dfs_best_dro[target]["Test_obj"].mean()
             }
     data = pd.DataFrame(data, index=[0])
     plot_data.append(data)
@@ -405,5 +406,33 @@ def plot_best_avg(plot_data,ylim=None):
     # plt.xlim([-0.02,0.20])
     plt.title("Out-of-sample averages (test set)")
     plt.savefig(path+"Test_avg.pdf",bbox_inches='tight')
+
+def plot_best_in(plot_data,ylim=None):
+    idx = 1
+    plt.figure(figsize = (8,4))
+    plt.plot(np.array(plot_data["mv_prob"]),np.array(plot_data["test_in_mv"]), label = "MV test" ,color = "tab:blue",marker = "^")
+    
+    plt.plot(np.array(plot_data["test_prob"]),np.array(plot_data["test_in"]), label = "Trained test" ,color = "tab:orange",marker = "D")
+
+    plt.plot(np.array(plot_data["test_prob_o"]),np.array(plot_data["test_in_o"]), label = "Trained test delage" ,color = "tab:brown",marker = "D")
+
+    plt.plot(np.array(plot_data["pre_prob"]),np.array(plot_data["test_in_pre"]), label = "Pretrained test" ,color = "tab:green",marker = "v")
+    
+    plt.plot(np.array(plot_data["dro_prob"]),np.array(plot_data["test_in_dro"]), label = "DRO test" ,color = "tab:olive",marker = "v")
+
+    plt.plot(np.array(plot_data["scenario_prob"]),np.array(plot_data["test_in_scene"]),label = "Scenario test",color = "tab:purple",marker = "o")
+
+    # plt.plot(np.array(plot_data["lcx_prob"]),np.array(plot_data["test_avg_lcx"]), label = "LCX test" ,color = "tab:pink",marker = "s")
+
+    plt.legend(loc = "upper right")
+    plt.xlabel("Probability of constraint violation")
+    # plt.ylabel("Out-of-sample objective")
+    plt.ylim(ylim)
+    plt.tight_layout()
+    # plt.xlim([-0.02,0.20])
+    plt.title("Robust objectives (test set)")
+    plt.savefig(path+"Test_in.pdf",bbox_inches='tight')
+
 plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid)
 plot_best_avg(plot_data)
+plot_best_in(plot_data)
