@@ -116,6 +116,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     settings.init_A = np.eye(n)
     settings.init_b = np.zeros(n)
     settings.seed = 5
+    settings.contextual = False
     settings.test_percentage=cfg.test_percentage
     settings.validate_percentage = cfg.validate_percentage
     result_grid = trainer.grid(rholst=eps_list,settings = settings)
