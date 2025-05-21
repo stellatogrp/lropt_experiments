@@ -122,9 +122,13 @@ def inv_exp(cfg,hydra_out_dir,seed,idxx):
         trainer = lropt.Trainer(prob)
         settings = lropt.TrainerSettings()
         settings.data = data
-        result_grid = trainer.grid(rholst=eps_list_train, init_A=np.eye(n),
-                            init_b=np.zeros(n), seed=5,
-                            init_alpha=0., test_percentage=cfg.test_percentage, validate_percentage = cfg.validate_percentage, quantiles = (0.3, 0.7),settings = settings)
+        settings.target_eta = 0.1
+        settings.init_A = np.eye(n)
+        settings.init_b = np.zeros(n)
+        settings.seed = 5
+        settings.test_percentage=cfg.test_percentage
+        settings.validate_percentage = cfg.validate_percentage
+        result_grid = trainer.grid(rholst=eps_list, settings = settings)
         dfgrid = result_grid.df
         dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
         dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'dro_grid.csv')
@@ -211,6 +215,7 @@ if __name__ == "__main__":
     sig = np.vstack([sig]*num_reps)
     context_dat = np.vstack([context]*num_reps)
     y_data = np.vstack([y_data]*num_reps)
+    np.random.seed(5)
     test_valid_indices = np.random.choice(N,int((test_p+0.2)*N), replace=False)
     test_indices = test_valid_indices[:int((test_p)*N)]
     valid_indices = test_valid_indices[int((test_p)*N):]
@@ -220,7 +225,6 @@ if __name__ == "__main__":
     for j in range(num_context):
         context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
         test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
-    eps_list=np.linspace(0.1, 3, 50)
-    eps_list_train = np.linspace(0.1, 4, 50)
+    eps_list=np.linspace(0.1, 6, 50)
     main_func()
 

@@ -1,8 +1,9 @@
 # defaults:
 #   - override hydra/launcher: joblib
 hydra:
-  # launcher:
-  #   n_jobs: 12
+  sweep:
+    dir: multirun/inv_dro/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
   job:
     chdir: True
   mode: MULTIRUN
@@ -47,5 +48,5 @@ initseedval: 0
 Nval: 1000
 addval: 0.0
 Rvals: 5
-mroK: 50
+mroK: 30
 initval: "eye"

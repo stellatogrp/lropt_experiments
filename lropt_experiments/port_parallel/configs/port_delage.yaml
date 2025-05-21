@@ -1,8 +1,9 @@
 # defaults:
 #   - override hydra/launcher: joblib
 hydra:
-  # launcher:
-  #   n_jobs: 12
+  sweep:
+    dir: multirun/delage_port_2000_30/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
   job:
     chdir: True
   mode: MULTIRUN
@@ -42,6 +43,6 @@ nval: 30
 Rval: 10
 seedvals: 0
 epslim: 0.010360
-addval: 0.1
-Fmults: 0.2
+addval: 0.05
+Fmults: 0.15
 target_eta: 0.1

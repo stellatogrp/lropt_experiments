@@ -1,22 +1,23 @@
 # defaults:
 #   - override hydra/launcher: joblib
 hydra:
-  # launcher:
-  #   n_jobs: 12
+  sweep:
+    dir: multirun/knn_port_2000_30/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
   job:
     chdir: True
   mode: MULTIRUN
   sweeper:
     params:
-      eta: 0.05,0.08,0.09,0.10,0.12,0.15
-      obj_scale: 1,1.5,2.5,3,5,8,10
+      eta: 0.05,0.08,0.10,0.12,0.15,0.2
+      obj_scale: 1,1.5,2.5,3,5,8
 eta: 0.15
 obj_scale: 1
 seed: 0
-lr: 0.001
-num_iter: 300
+lr: 0.005
+num_iter: 1
 optimizer: "Adam"
-init_rho: 4
+init_rho: 2
 init_lam: 1
 init_mu: 1
 mu_multiplier: 1.005
@@ -37,19 +38,18 @@ test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
 Nval: 2000
-nval: 10
+nval: 30
 Rval: 10
 seedvals: 0
 knnnum: .1
 epslim: 0.50360
 epslimtrain: 0.510120
-addval: 0.1
-Fmults: 0.2
+addval: 0.05
+Fmults: 0.15
 knn_mult: 0.95
 deep: False
 cov: False
 expected: True
-use_eval: False
 cvar_eval: True
 target_eta: 0.1
-knn_mult_train: 0.95
+knn_mult_train: 0.4

@@ -46,20 +46,24 @@ def gen_sigmu_varied(n,N = 500,seed = 0):
     sig = []
     context = []
     mu = []
-    origmu = np.random.uniform(0.5,1,n)
+    pert = np.zeros((n,2))
+    pert[:,0] = np.array([j*0.02 for j in range(n)])
+    pert[:,1] = np.array([j*0.06 for j in range(n)])
+    origmu = np.sort(np.random.uniform(0.5,1,n))
     for i in range(N):
         F = np.random.normal(size = (n,2))
+        F += pert
         context.append(F)
-        csig = 0.2*F@(F.T)
+        csig = 0.15*F@(F.T)
         sig.append(csig)
-        mu.append(np.random.uniform(0.5,1,n))
+        mu.append(np.sort(np.random.uniform(0.5,1,n)))
     return np.stack(sig), np.vstack(mu), np.stack(context), origmu
 
 def gen_demand_varied(sig,mu,orig_mu,N,seed=399):
     pointlist = []
     np.random.seed(seed)
     for i in range(N):
-        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0.1*np.eye(orig_mu.shape[0]))
+        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0.05*np.eye(orig_mu.shape[0]))
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
@@ -203,7 +207,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     settings.validate_frequency = cfg.validate_frequency
     settings.initialize_predictor = cfg.initialize_predictor
     settings.num_iter = cfg.num_iter
-    settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
+    settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200,knn_cov=False,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
     # settings.predictor = lropt.CovPredictor()
     # settings.predictor = lropt.DeepNormalModel(knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
     settings.data = data
@@ -373,7 +377,7 @@ if __name__ == "__main__":
     R = 10
     initseed = seed_list[idx]
     n = n_list[idx]
-    N = 1000
+    N = 2000
     num_context = 20
     test_p = 0.5
     # sig, mu = gen_sigmu(n,1)
@@ -393,6 +397,6 @@ if __name__ == "__main__":
       test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
     eps_list= np.concat([np.logspace(-4,-1,10),np.linspace(0.11,1,15),np.linspace(1.1,7,60)])
     # np.linspace(0.5, 3, 60)
-    eps_list_train = np.linspace(0.5, 10, 120)
+    # eps_list_train = np.linspace(0.5, 10, 120)
     main_func()
 

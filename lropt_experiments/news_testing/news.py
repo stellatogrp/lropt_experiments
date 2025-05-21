@@ -235,13 +235,6 @@ def news_exp(cfg,hydra_out_dir,seed):
         settings.init_b = init_bval
         settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain = True,epochs = 20, lr = 0.001)
         result = trainer.train(settings=settings)
-        # df = result.df
-        # df = df.drop(columns=["grad"])
-        # df.to_csv(hydra_out_dir+'/'+'linear_train.csv')
-
-        # dfval = result.df_validate
-        # dfval = dfval.drop(columns=["z_vals","x_vals"])
-        # dfval.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_validate.csv')
         torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'trained_linear.pth')
     except:
         print("training failed")
@@ -308,7 +301,7 @@ def news_exp(cfg,hydra_out_dir,seed):
 
 
 
-@hydra.main(config_path="/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/news_testing/configs",config_name = "news.yaml", version_base = None)
+@hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/news_testing/configs",config_name = "news.yaml", version_base = None)
 def main_func(cfg: DictConfig):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     print(f"Current working directory: {os.getcwd()}")
@@ -323,7 +316,7 @@ if __name__ == "__main__":
     init_seed = 0
     N = 2000
     #eps_list = [0.5,0.7,0.9,1,1.1,1.3,1.5,2,2.5]
-    eps_list = np.linspace(0.5,2.5,50)
+    eps_list = np.linspace(0.5,2.5,40)
     k_init = np.array([4.,5.])
     R = 10
     s = 1

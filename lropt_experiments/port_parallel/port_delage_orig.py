@@ -46,20 +46,24 @@ def gen_sigmu_varied(n,N = 500,seed = 0):
     sig = []
     context = []
     mu = []
-    origmu = np.random.uniform(0.5,1,n)
+    pert = np.zeros((n,2))
+    pert[:,0] = np.array([j*0.02 for j in range(n)])
+    pert[:,1] = np.array([j*0.06 for j in range(n)])
+    origmu = np.sort(np.random.uniform(0.5,1,n))
     for i in range(N):
         F = np.random.normal(size = (n,2))
+        F += pert
         context.append(F)
-        csig = 0.2*F@(F.T)
+        csig = 0.15*F@(F.T)
         sig.append(csig)
-        mu.append(np.random.uniform(0.5,1,n))
+        mu.append(np.sort(np.random.uniform(0.5,1,n)))
     return np.stack(sig), np.vstack(mu), np.stack(context), origmu
 
 def gen_demand_varied(sig,mu,orig_mu,N,seed=399):
     pointlist = []
     np.random.seed(seed)
     for i in range(N):
-        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0.1*np.eye(orig_mu.shape[0]))
+        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0.05*np.eye(orig_mu.shape[0]))
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
@@ -190,7 +194,7 @@ if __name__ == "__main__":
     # arguments = parser.parse_args()
     seed_list = [0,0,0]
     n_list = [10,20,30]
-    R = 1
+    R = 10
     initseed = seed_list[idx]
     n = n_list[idx]
     N = 2000

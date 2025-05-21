@@ -2,8 +2,8 @@
 #SBATCH --job-name=newstest
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=18
-#SBATCH --mem-per-cpu=15G
+#SBATCH --cpus-per-task=15
+#SBATCH --mem-per-cpu=3G
 #SBATCH --time=23:40:00
 #SBATCH -o /scratch/gpfs/iywang/lropt_revision/output/news/news_test_%A_.txt
 #SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT
@@ -14,9 +14,9 @@ module purge
 module load anaconda3/2023.9
 conda activate lropt_rev
 
-python lropt_experiments/news_testing/news.py --config-name=news.yaml
-# python lropt_experiments/port_parallel/port_dro.py --config-name=port_dro.yaml
-# python lropt_experiments/port_parallel/port_delage.py --config-name=port_delage.yaml
+# python lropt_experiments/news_testing/news_deep.py --config-name=news_deep.yaml
+python lropt_experiments/news_testing/news_dro.py --config-name=news_dro.yaml
+
 
 #--config-name=port.yaml seed=10 eta=10 
 

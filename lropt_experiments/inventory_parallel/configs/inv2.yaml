@@ -8,15 +8,15 @@ hydra:
   mode: MULTIRUN
   sweeper:
     params:
-      eta: 0.10,0.20,0.25,0.30,0.33,0.35,0.40,0.50
-      obj_scale: 0.5,1,2 
+      eta: 0.01,0.05,0.10,0.12,0.15,0.20,0.30
+      obj_scale: 0.5,1,2
 eta: 0.01
 obj_scale: 1
 seed: 0
 lr: 0.0005
 num_iter: 501
-optimizer: "SGD"
-init_rho: 1
+optimizer: "Adam"
+init_rho: 1.5
 init_lam: 2
 init_mu: 2
 mu_multiplier: 1.02
@@ -41,11 +41,14 @@ n_val: 10
 m_val: 4
 sigmult: 0.3
 epsrange: 1450
-gridalso: False
 pretrain: True
 initseedval: 0
 Nval: 1000
-epslimtrain: 1990
-addval: 0.1
+epslimtrain: 1450
+addval: 0.0
 Rvals: 5
-knnvals: 15
+knnvals: 30
+use_eval: True
+knn_mult: 0.95
+deep: False
+target_eta: 0.1

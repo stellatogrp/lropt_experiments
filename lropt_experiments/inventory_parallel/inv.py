@@ -356,7 +356,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
     except:
         return None
 
-@hydra.main(config_path="/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/inventory_parallel/configs",config_name = "inv.yaml", version_base = None)
+@hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/inventory_parallel/configs",config_name = "inv.yaml", version_base = None)
 def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     # print(f"Current working directory: {os.getcwd()}")
@@ -387,7 +387,6 @@ if __name__ == "__main__":
     N = 1000
     n = 10
     m = 4
-    #m_list[idx]
     np.random.seed(27)
     y_nom = np.random.uniform(2,4,n)
     y_data = y_nom
@@ -406,6 +405,7 @@ if __name__ == "__main__":
     sig = np.vstack([sig]*num_reps)
     context_dat = np.vstack([context]*num_reps)
     y_data = np.vstack([y_data]*num_reps)
+    np.random.seed(5)
     test_valid_indices = np.random.choice(N,int((test_p+0.2)*N), replace=False)
     test_indices = test_valid_indices[:int((test_p)*N)]
     valid_indices = test_valid_indices[int((test_p)*N):]
@@ -415,7 +415,7 @@ if __name__ == "__main__":
     for j in range(num_context):
         context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
         test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
-    eps_list= np.concat([np.logspace(-4,-1,3),np.linspace(0.11,2,6),np.linspace(2.05,3,18),np.linspace(3.1,5.5,10)])
+    eps_list= np.concat([np.logspace(-4,-1,3),np.linspace(0.11,2,20),np.linspace(2.05,3,8),np.linspace(3.1,5.5,5)])
     # np.linspace(1, 4, 50)
     # eps_list_train = np.linspace(1, 4, 50)
     main_func()
