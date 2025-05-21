@@ -1,8 +1,9 @@
 # defaults:
 #   - override hydra/launcher: joblib
 hydra:
-  # launcher:
-  #   n_jobs: 12
+  sweep:
+    dir: multirun/inv_knn/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
   job:
     chdir: True
   mode: MULTIRUN
@@ -52,3 +53,4 @@ use_eval: True
 knn_mult: 0.95
 deep: False
 target_eta: 0.1
+knn_mult_train: 0.4

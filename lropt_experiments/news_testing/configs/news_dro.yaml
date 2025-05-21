@@ -2,7 +2,7 @@
 #   - override hydra/launcher: joblib
 hydra:
   sweep:
-    dir: multirun/news_dro/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: multirun/news/${now:%Y-%m-%d}/${now:%H-%M-%S}
     subdir: ${hydra.job.num}
   job:
     chdir: True
@@ -44,4 +44,4 @@ initialize_predictor: True
 knn_mult: 0.95
 target_eta: 0.1
 Rval: 10
-Kval: 1
+Kval: 300

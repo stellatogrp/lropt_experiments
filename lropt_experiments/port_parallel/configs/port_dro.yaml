@@ -30,7 +30,7 @@ lr_gamma: 0.5
 random_init: False
 parallel: False
 kappa: 0
-contextual: True
+contextual: False
 max_iter_line_search: 100
 line_search: True
 max_batch_size: 100
@@ -39,7 +39,7 @@ validate_percentage: 0.2
 test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
-nval: 30
+nval: 10
 Rval: 10
 seedvals: 090
 epslim: 0.50360

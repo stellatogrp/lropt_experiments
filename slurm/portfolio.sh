@@ -3,8 +3,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=18
-#SBATCH --mem-per-cpu=1G
-#SBATCH --time=00:40:00
+#SBATCH --mem-per-cpu=15G
+#SBATCH --time=23:40:00
 #SBATCH -o /scratch/gpfs/iywang/lropt_revision/output/portfolio/portfolio_test_%A_.txt
 #SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT
 #SBATCH --mail-user=iabirina@hotmail.com
@@ -14,9 +14,9 @@ module purge
 module load anaconda3/2023.9
 conda activate lropt_rev
 
-# python lropt_experiments/port_parallel/port_knn1000.py --config-name=port7.yaml
-python lropt_experiments/port_parallel/port_dro.py --config-name=port_dro.yaml
-# python lropt_experiments/port_parallel/port_delage_orig1000.py --config-name=port_delage3.yaml
+python lropt_experiments/port_parallel/port_knn_cvar.py --config-name=port5.yaml
+# python lropt_experiments/port_parallel/port_dro.py --config-name=port_dro.yaml
+# python lropt_experiments/port_parallel/port_delage_orig.py --config-name=port_delage1.yaml
 
 #--config-name=port.yaml seed=10 eta=10 
 

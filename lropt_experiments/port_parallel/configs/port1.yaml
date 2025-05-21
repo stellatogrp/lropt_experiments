@@ -2,15 +2,15 @@
 #   - override hydra/launcher: joblib
 hydra:
   sweep:
-    dir: multirun/port_1000_10/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: multirun/port_1000/${now:%Y-%m-%d}/${now:%H-%M-%S}
     subdir: ${hydra.job.num}
   job:
     chdir: True
   mode: MULTIRUN
   sweeper:
     params:
-      eta: 0.05,0.08,0.09,0.10,0.12,0.15,0.2
-      obj_scale: 1,1.5,2.5,3,5,8,10
+      eta: 0.05,0.08,0.10,0.12,0.15,0.2
+      obj_scale: 1,1.5,2.5,3,5,8
 eta: 0.15
 obj_scale: 1
 seed: 0
@@ -38,14 +38,14 @@ test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
 Nval: 1000
-nval: 10
+nval: 30
 Rval: 10
 seedvals: 0
 knnnum: .1
 epslim: 0.50360
 epslimtrain: 0.510120
-addval: 0.05
-Fmults: 0.15
+addval: 0.1
+Fmults: 0.2
 knn_mult: 0.95
 deep: False
 cov: False

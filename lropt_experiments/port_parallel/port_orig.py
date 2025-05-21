@@ -52,9 +52,8 @@ def gen_sigmu_varied(n,N = 500,seed = 0):
     origmu = np.sort(np.random.uniform(0.5,1,n))
     for i in range(N):
         F = np.random.normal(size = (n,2))
-        F += pert
         context.append(F)
-        csig = 0.15*F@(F.T)
+        csig = 0.2*F@(F.T)
         sig.append(csig)
         mu.append(np.sort(np.random.uniform(0.5,1,n)))
     return np.stack(sig), np.vstack(mu), np.stack(context), origmu
@@ -63,7 +62,7 @@ def gen_demand_varied(sig,mu,orig_mu,N,seed=399):
     pointlist = []
     np.random.seed(seed)
     for i in range(N):
-        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0.05*np.eye(orig_mu.shape[0]))
+        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0.1*np.eye(orig_mu.shape[0]))
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
@@ -80,7 +79,7 @@ def calc_eval(x,t,u,eta):
         val_cur = -x@u[i]
         val+= val_cur
         vio += (val_cur >= t)
-    return -cvar_loss, vio/u.shape[0], val/u.shape[0]
+    return -cvar_loss, vio/u.shape[0], val/u.shape[0], -quantile_value
 
 
 def portfolio_exp(cfg,hydra_out_dir,seed):
@@ -103,6 +102,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         context_probs = 0
         context_objs = 0
         avg_vals = 0
+        quant_val = 0
         for j in range(num_context):
             u = lropt.UncertainParameter(n,
                                     uncertainty_set=lropt.Scenario(
@@ -115,22 +115,25 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
             prob_context = lropt.RobustProblem(objective, constraints)
             prob_context.solve()
-            eval, prob_vio, avg = calc_eval(x_s.value, t_s.value,data[test_inds[j]],cfg.target_eta)
+            eval, prob_vio, avg, quantval = calc_eval(x_s.value, t_s.value,data[test_inds[j]],cfg.target_eta)
             context_evals += eval
             context_probs += prob_vio
             avg_vals += avg
             context_objs += t_s.value
+            quant_val += quantval
 
         
         context_evals = context_evals/num_context
         context_probs = context_probs/num_context
         context_objs = context_objs/num_context
         context_avg = avg_vals/num_context
+        context_quant = quant_val/num_context
 
         nonrob_evals = 0
         nonrob_probs = 0
         nonrob_objs = 0
         avg_vals = 0
+        quant_val = 0
         for j in range(num_context):
             u = lropt.UncertainParameter(n,
                                     uncertainty_set=lropt.Scenario(
@@ -143,17 +146,19 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
             constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
             prob_nonrob = lropt.RobustProblem(objective, constraints)
             prob_nonrob.solve()
-            eval, prob_vio, avg = calc_eval(x_s.value, t_s.value,data[test_inds[j]],cfg.target_eta)
+            eval, prob_vio, avg,quantval = calc_eval(x_s.value, t_s.value,data[test_inds[j]],cfg.target_eta)
             nonrob_evals += eval
             nonrob_probs += prob_vio
             nonrob_objs += t_s.value
             avg_vals += avg
+            quant_val += quantval
         nonrob_evals = nonrob_evals / (num_context)
         nonrob_probs = nonrob_probs / (num_context)
         nonrob_objs = nonrob_objs/num_context
         nonrob_avg = avg_vals/num_context
+        nonrob_quant = quant_val/num_context
 
-        data_df = {'seed': initseed+10*seed, "a_seed":finseed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals, "scenario_in": context_objs, "nonrob_in": nonrob_objs, "scenario_avg":context_avg, "nonrob_avg": nonrob_avg}
+        data_df = {'seed': initseed+10*seed, "a_seed":finseed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_quant, "scenario_probs": context_probs, "scenario_obj": context_quant, "scenario_in": context_objs, "nonrob_in": nonrob_objs, "scenario_avg":context_avg, "nonrob_avg": nonrob_avg, "scenario_cvar":context_evals, "nonrob_cvar": nonrob_evals}
         single_row_df = pd.DataFrame(data_df, index=[0])
         single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals_nonrob.csv",index=False)
 
@@ -267,7 +272,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         findfs = []
         for rho in eps_list:
             df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
-            data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_cvar"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_cvar"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime,"valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0], "valid_in": df_valid["Validate_insample"][0], "test_in": df_test["Test_insample"][0], "avg_val": df_test["Test_val"][0]}
+            data_df = {'seed': initseed+10*seed, 'rho':rho, "a_seed":finseed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_worst"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_worst"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime,"valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0], "valid_in": df_valid["Validate_insample"][0], "test_in": df_test["Test_insample"][0], "avg_val": df_test["Test_val"][0],'valid_cvar': df_valid["Validate_cvar"][0], 'test_cvar': df_test["Test_cvar"][0]}
             single_row_df = pd.DataFrame(data_df, index=[0])
             findfs.append(single_row_df)
         findfs = pd.concat(findfs)
@@ -395,7 +400,7 @@ if __name__ == "__main__":
     for j in range(num_context):
       context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
       test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
-    eps_list= np.concat([np.logspace(-4,-1,10),np.linspace(0.11,1,15),np.linspace(1.1,7,60)])
+    eps_list= np.concat([np.logspace(-4,-1,15),np.linspace(0.11,1,20),np.linspace(1.1,3.5,30)])
     # np.linspace(0.5, 3, 60)
     # eps_list_train = np.linspace(0.5, 10, 120)
     main_func()

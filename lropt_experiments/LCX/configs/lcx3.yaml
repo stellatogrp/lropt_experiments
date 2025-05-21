@@ -1,8 +1,9 @@
 # defaults:
 #   - override hydra/launcher: joblib
 hydra:
-  # launcher:
-  #   n_jobs: 12
+  sweep:
+    dir: multirun/lcx_1000_30
+    subdir: ${hydra.job.num}
   job:
     chdir: True
   mode: MULTIRUN
@@ -13,7 +14,7 @@ hydra:
 alpha: 0.05
 eps: 0.05
 nval: 30
-Nval: 2000
+Nval: 1000
 sepcontext: True
 maxouteriter: 60
 numBoots: 10000

@@ -74,7 +74,7 @@ def calc_eval(x,p,k,u,t,eta):
     quantile_value = vals_sorted[quantile_index]
     vals_le_quant = (vals <= quantile_value).astype(float)
     cvar_loss = np.sum(vals * vals_le_quant) / np.sum(vals_le_quant)
-    return -cvar_loss, vio/u.shape[0],val/u.shape[0]
+    return -cvar_loss, vio/u.shape[0],val/u.shape[0], -quantile_value
 
 def news_exp(cfg,hydra_out_dir,seed):
     seed = init_seed + seed
@@ -85,11 +85,12 @@ def news_exp(cfg,hydra_out_dir,seed):
     init = sc.linalg.sqrtm(np.cov(train.T))
     init_bval = np.mean(train, axis=0)
 
-    if cfg.eta == 0.01 and cfg.obj_scale == 1:
+    if cfg.eta == 0.05 and cfg.obj_scale == 1:
         context_evals = 0
         context_probs = 0
         context_objs = 0
         avg_vals = 0
+        quant_val = 0
         # solve for each context and average
         for j in range(num_context):
             u = lropt.UncertainParameter(n,
@@ -109,20 +110,23 @@ def news_exp(cfg,hydra_out_dir,seed):
 
             prob_sc = lropt.RobustProblem(objective, constraints)
             prob_sc.solve()
-            eval, prob_vio, avg = calc_eval(x_s.value, init_p_data[j], init_k_data[j],data[test_inds[j]],t1.value,cfg.target_eta)
+            eval, prob_vio, avg,quantval = calc_eval(x_s.value, init_p_data[j], init_k_data[j],data[test_inds[j]],t1.value,cfg.target_eta)
             context_evals += eval
             context_probs += prob_vio
             avg_vals += avg
             context_objs += t1.value
+            quant_val += quantval
         context_evals = context_evals/num_context
         context_probs = context_probs/num_context
         context_objs = context_objs/num_context
         context_avg = avg_vals/num_context
+        context_quant = quant_val/num_context
 
         nonrob_evals = 0
         nonrob_probs = 0
         nonrob_objs = 0
         avg_vals = 0
+        quant_val = 0
         for j in range(num_context):
             u = lropt.UncertainParameter(n,
                                     uncertainty_set=lropt.Scenario(
@@ -142,18 +146,20 @@ def news_exp(cfg,hydra_out_dir,seed):
             prob_sc = lropt.RobustProblem(objective, constraints)
             prob_sc.solve()
 
-            eval, prob_vio,avg = calc_eval(x_s.value, init_p_data[j], init_k_data[j],data[test_inds[j]],t1.value,cfg.target_eta)
+            eval, prob_vio,avg,quantval = calc_eval(x_s.value, init_p_data[j], init_k_data[j],data[test_inds[j]],t1.value,cfg.target_eta)
             nonrob_evals += eval
             nonrob_probs += prob_vio
             nonrob_objs += t1.value
             avg_vals += avg
-
+            quant_val += quantval
+            
         nonrob_evals = nonrob_evals / (num_context)
         nonrob_probs = nonrob_probs / (num_context)
         nonrob_objs = nonrob_objs/num_context
         nonrob_avg = avg_vals/num_context
+        nonrob_quant = quant_val/num_context
 
-        data_df = {'seed': seed, "a_seed":seed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_evals, "scenario_probs": context_probs, "scenario_obj": context_evals, "scenario_in": context_objs, "nonrob_in": nonrob_objs, "scenario_avg":context_avg, "nonrob_avg": nonrob_avg}
+        data_df = {'seed': seed, "a_seed":seed,"nonrob_prob": nonrob_probs, "nonrob_obj":nonrob_quant, "scenario_probs": context_probs, "scenario_obj": context_quant, "scenario_in": context_objs, "nonrob_in": nonrob_objs, "scenario_avg":context_avg, "nonrob_avg": nonrob_avg, "scenario_cvar":context_evals, "nonrob_cvar": nonrob_evals}
         single_row_df = pd.DataFrame(data_df, index=[0])
         single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals_nonrob.csv",index=False)
 
@@ -211,7 +217,7 @@ def news_exp(cfg,hydra_out_dir,seed):
     settings.data = data
     settings.cost_func = True
     settings.target_eta = cfg.target_eta
-    if cfg.eta == 0.01 and cfg.obj_scale == 1:
+    if cfg.eta == 0.05 and cfg.obj_scale == 1:
         # no training (steps = 1, look at initalized set)
         settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
         settings.num_iter = 1 
@@ -249,7 +255,7 @@ def news_exp(cfg,hydra_out_dir,seed):
         findfs = []
         for rho in eps_list:
             df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
-            data_df = {'seed': seed, 'rho':rho, "a_seed":seed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_cvar"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_cvar"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime,"valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0], "valid_in": df_valid["Validate_insample"][0], "test_in": df_test["Test_insample"][0], "avg_val": df_test["Test_val"][0]}
+            data_df = {'seed': seed, 'rho':rho, "a_seed":seed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_worst"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_worst"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime,"valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0], "valid_in": df_valid["Validate_insample"][0], "test_in": df_test["Test_insample"][0], "avg_val": df_test["Test_val"][0],'valid_cvar': df_valid["Validate_cvar"][0], 'test_cvar': df_test["Test_cvar"][0]}
             single_row_df = pd.DataFrame(data_df, index=[0])
             findfs.append(single_row_df)
         findfs = pd.concat(findfs)
@@ -257,7 +263,7 @@ def news_exp(cfg,hydra_out_dir,seed):
     except:
         None
 
-    if cfg.eta == 0.01 and cfg.obj_scale == 1:
+    if cfg.eta == 0.05 and cfg.obj_scale == 1:
         # Grid search epsilon
         # mean variance set
         settings.contextual = False
@@ -271,7 +277,7 @@ def news_exp(cfg,hydra_out_dir,seed):
     beg2, end2 = 0, 100
     plt.figure(figsize=(15, 4))
     
-    if cfg.eta == 0.01 and cfg.obj_scale == 1:
+    if cfg.eta == 0.05 and cfg.obj_scale == 1:
         plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
             dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
         plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
@@ -316,7 +322,7 @@ if __name__ == "__main__":
     init_seed = 0
     N = 2000
     #eps_list = [0.5,0.7,0.9,1,1.1,1.3,1.5,2,2.5]
-    eps_list = np.linspace(0.5,2.5,40)
+    eps_list = np.linspace(0.4,2,40)
     k_init = np.array([4.,5.])
     R = 10
     s = 1

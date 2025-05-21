@@ -218,6 +218,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     settings.data = data
     settings.cost_func = True
     settings.target_eta = cfg.target_eta
+    settings.cvar_obj = True
     print("training start")
     try:
         result = trainer.train(settings=settings)

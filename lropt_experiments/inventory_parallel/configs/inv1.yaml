@@ -11,12 +11,12 @@ hydra:
       eta: 0.01,0.05,0.10,0.12,0.15,0.20,0.30
       obj_scale: 0.5,1,2
 eta: 0.01
-obj_scale: 1
+obj_scale: 1.5
 seed: 0
 lr: 0.0005
 num_iter: 501
 optimizer: "Adam"
-init_rho: 2
+init_rho: 1.5
 init_lam: 2
 init_mu: 2
 mu_multiplier: 1.02

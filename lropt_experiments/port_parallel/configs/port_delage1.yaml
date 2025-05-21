@@ -2,7 +2,7 @@
 #   - override hydra/launcher: joblib
 hydra:
   sweep:
-    dir: multirun/delage_port_2000_10/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: multirun/delage_port_1000/${now:%Y-%m-%d}/${now:%H-%M-%S}
     subdir: ${hydra.job.num}
   job:
     chdir: True
@@ -38,11 +38,11 @@ validate_percentage: 0.2
 test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
-Nval: 2000
+Nval: 1000
 nval: 10
 Rval: 10
 seedvals: 0
 epslim: 0.010360
-addval: 0.05
-Fmults: 0.15
+addval: 0.1
+Fmults: 0.2
 target_eta: 0.1
