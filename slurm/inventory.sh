@@ -14,7 +14,7 @@ module purge
 module load anaconda3/2023.9
 conda activate lropt_rev
 
-python lropt_experiments/inventory_parallel/inv1.py --config-name=inv2.yaml
+python lropt_experiments/inventory_parallel/inv2.py --config-name=inv1.yaml
 # python lropt_experiments/inventory_parallel/inv_dro.py --config-name=inv_dro.yaml
 #--config-name=port.yaml seed=10 eta=10 
 
