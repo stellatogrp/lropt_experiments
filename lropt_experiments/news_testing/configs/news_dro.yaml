@@ -32,7 +32,7 @@ lr_gamma: 0.5
 random_init: False
 parallel: False
 kappa: 0
-contextual: True
+contextual: False
 max_iter_line_search: 100
 line_search: True
 max_batch_size: 200
