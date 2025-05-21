@@ -27,7 +27,7 @@ etas1 = [0.05,0.1,0.12,0.15,0.2,0.3]
 objs1 = [0.9,0.6,0.5,0.4,0.2,0.1]
 seeds1 = [0,10,20,30,40,50,60,70,80,90]
 foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/cvar/fixed/30_2000/"
-foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/cvar/obj_4/30_2000.1/"
+foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/cvar/obj_4/30_2000/"
 foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/cvar/DRO/30_2000/"
 foldername5 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/cvar/Delage/30_2000/"
 # foldername6 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/cvar/lcx/30_1000/"
@@ -241,7 +241,6 @@ for target in target_list:
             print(seed)
     dfs_best[target] = pd.concat(dfs_best[target])   
 dfs_best_o = {}
-dif=0.001
 curdif = dif
 for target in target_list:
     inds[target] = []
