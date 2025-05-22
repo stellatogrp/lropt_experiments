@@ -44,3 +44,4 @@ initialize_predictor: True
 knn_mult: 0.95
 target_eta: 0.1
 Rval: 10
+cvar_obj_only: True
