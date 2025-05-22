@@ -43,6 +43,6 @@ nval: 10
 Rval: 10
 seedvals: 0
 epslim: 0.010360
-addval: 0.1
+addval: 0
 Fmults: 0.2
 target_eta: 0.1

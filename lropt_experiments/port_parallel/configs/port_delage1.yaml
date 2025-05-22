@@ -39,10 +39,10 @@ test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
 Nval: 1000
-nval: 10
+nval: 30
 Rval: 10
 seedvals: 0
 epslim: 0.010360
-addval: 0.1
+addval: 0
 Fmults: 0.2
 target_eta: 0.1
