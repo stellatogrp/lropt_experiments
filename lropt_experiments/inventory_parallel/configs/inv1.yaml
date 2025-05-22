@@ -52,3 +52,4 @@ use_eval: True
 knn_mult: 0.95
 deep: False
 target_eta: 0.1
+cvar_obj_only: True
