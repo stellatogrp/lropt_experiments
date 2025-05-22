@@ -44,7 +44,7 @@ seedvals: 0
 knnnum: .1
 epslim: 0.50360
 epslimtrain: 0.510120
-addval: 0.1
+addval: 0
 Fmults: 0.2
 knn_mult: 0.95
 deep: False
@@ -52,4 +52,4 @@ cov: False
 expected: True
 target_eta: 0.1
 knn_mult_train: 0.4
-cvar_obj: True
+cvar_obj_only: True
