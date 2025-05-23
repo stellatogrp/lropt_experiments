@@ -250,7 +250,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
         settings.validate_frequency = cfg.validate_frequency
         settings.initialize_predictor = cfg.initialize_predictor
         settings.num_iter = cfg.num_iter
-        settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 100)
+        settings.predictor = lropt.LinearPredictor(predict_mean = True,predict_cov = True, pretrain=True, lr=0.001,epochs = 100,n_neighbors=int(N*0.3*0.3))
         # settings.predictor = lropt.DeepNormalModel()
         settings.data=data
         settings.cost_func = True

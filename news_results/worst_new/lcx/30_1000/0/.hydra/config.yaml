@@ -1,0 +1,7 @@
+alpha: 0.1
+eps: 0.1
+nval: 30
+Nval: 1000
+sepcontext: true
+maxouteriter: 60
+numBoots: 10000

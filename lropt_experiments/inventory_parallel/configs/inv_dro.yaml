@@ -48,5 +48,5 @@ initseedval: 0
 Nval: 1000
 addval: 0.0
 Rvals: 10
-mroK: 30
+mroK: 50
 initval: "eye"
