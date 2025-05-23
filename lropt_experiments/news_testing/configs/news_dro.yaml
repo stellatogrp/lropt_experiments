@@ -2,7 +2,7 @@
 #   - override hydra/launcher: joblib
 hydra:
   sweep:
-    dir: multirun/news/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: multirun/news_new/${now:%Y-%m-%d}/${now:%H-%M-%S}
     subdir: ${hydra.job.num}
   job:
     chdir: True

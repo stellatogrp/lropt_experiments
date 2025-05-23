@@ -48,6 +48,9 @@ def gen_sigmu_varied(n,N = 500,seed = 0):
     sig = []
     context = []
     mu = []
+    pert = np.zeros((n,2))
+    pert[:,0] = np.array([j*0.02 for j in range(n)])
+    pert[:,1] = np.array([j*0.06 for j in range(n)])
     origmu = np.random.uniform(0.5,1,n)
     for i in range(N):
         F = np.random.normal(size = (n,2))
@@ -61,10 +64,9 @@ def gen_demand_varied(sig,mu,orig_mu,N,seed=399):
     pointlist = []
     np.random.seed(seed)
     for i in range(N):
-        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0.1*np.eye(orig_mu.shape[0]))
+        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0.0*np.eye(orig_mu.shape[0]))
         pointlist.append(d_train)
     return np.vstack(pointlist)
-
 
 
 

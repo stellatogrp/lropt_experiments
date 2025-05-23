@@ -50,7 +50,7 @@ def get_n_processes(max_n=np.inf):
 def gen_demand_cor(N,seed,x1, x2):
     np.random.seed(seed)
     sig = np.eye(2)
-    mu = np.array((6,7))
+    mu = np.array((6,9))
     points_list = []
     for i in range(N):
         mu_shift = -0.4*x1[i] - 0.1*x2[i]
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     N = 2000
     #eps_list = [0.5,0.7,0.9,1,1.1,1.3,1.5,2,2.5]
     eps_list = np.linspace(0.5,2.5,40)
-    k_init = np.array([4.,5.])
+    k_init = np.array([2.,3.])
     R = 10
     s = 1
     # in order for scenario to make sense, generate only 20 contexts
