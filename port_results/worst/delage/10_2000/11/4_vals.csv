@@ -1,0 +1,2 @@
+seed,rho,a_seed,eta,gamma,init_rho,valid_obj,valid_prob,test_obj,test_prob,time,valid_cover,test_cover,valid_in,test_in,valid_avg,avg_val,valid_cvar,test_cvar
+40,1,40,0.1,1,1,-0.6698661029658293,0.0,-0.6618355221065502,0.0,0.000378282,0.0,0.0,0.021816065477196105,0.021783656673312814,-0.7874622656419666,-0.7887946281560974,-0.5916851028451218,-0.5706111705671094

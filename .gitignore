@@ -167,3 +167,4 @@ cython_debug/
 .aider*
 multirun/
 backup/
+multirun_old/

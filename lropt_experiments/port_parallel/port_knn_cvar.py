@@ -212,7 +212,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     settings.validate_frequency = cfg.validate_frequency
     settings.initialize_predictor = cfg.initialize_predictor
     settings.num_iter = cfg.num_iter
-    settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
+    settings.predictor = lropt.LinearPredictor(predict_mean = True, predict_cov = True, pretrain=True, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
     # settings.predictor = lropt.CovPredictor()
     # settings.predictor = lropt.DeepNormalModel(knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
     settings.data = data
