@@ -37,8 +37,8 @@ validate_percentage: 0.2
 test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
-Nval: 2000
-nval: 30
+Nval: 1000
+nval: 10
 Rval: 10
 seedvals: 0
 knnnum: .1
@@ -53,4 +53,4 @@ expected: True
 target_eta: 0.1
 knn_mult_train: 0
 cvar_obj_only: True
-avg_scale: 0.6
+avg_scale: 5

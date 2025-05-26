@@ -50,7 +50,7 @@ def get_n_processes(max_n=np.inf):
 def gen_demand_cor(N,seed,x1, x2):
     np.random.seed(seed)
     sig = np.eye(2)
-    mu = np.array((6,7))
+    mu = np.array((13,14))
     points_list = []
     for i in range(N):
         mu_shift = -0.4*x1[i] - 0.1*x2[i]
@@ -240,7 +240,7 @@ def news_exp(cfg,hydra_out_dir,seed):
         settings.num_iter = cfg.num_iter
         settings.init_A = init
         settings.init_b = init_bval
-        settings.predictor = lropt.LinearPredictor(predict_mean = True,predict_cov = True, n_neighbors = int(0.1*N*0.3), pretrain = True,epochs = 20, lr = 0.001)
+        settings.predictor = lropt.LinearPredictor(predict_mean = True,predict_cov = False, n_neighbors = int(0.1*N*0.3), pretrain = True,epochs = 20, lr = 0.001)
         result = trainer.train(settings=settings)
         torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'trained_linear.pth')
     except:
