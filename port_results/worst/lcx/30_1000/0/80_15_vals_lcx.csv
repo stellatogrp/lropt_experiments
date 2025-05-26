@@ -1,2 +1,2 @@
-outer_iter,context_val,seed,alpha,eps,test_lcx_prob,test_lcx_obj,valid_lcx_prob,valid_lcx_obj,time,in_val,test_avg,valid_avg
-49,15,80,0.1,0.1,0.0,-0.44719265671286146,0.0,-0.6009363315088656,61037.72402596474,0.24979720105561176,-0.7934945610898996,-0.8373650100452803
+outer_iter,context_val,seed,alpha,eps,test_lcx_prob,test_lcx_obj,valid_lcx_prob,valid_lcx_obj,time,in_val,test_avg,valid_avg,test_lcx_cvar,valid_lcx_cvar
+49,15,80,0.1,0.1,0.0,-0.6291057671668427,0.0,-0.606569672858488,60621.81290888786,0.24979720105561176,-0.7934945610898996,-0.8373650100452803,-0.44719265671286146,-0.6009363315088656
