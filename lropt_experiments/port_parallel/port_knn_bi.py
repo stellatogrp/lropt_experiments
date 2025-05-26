@@ -62,7 +62,7 @@ def gen_demand_varied(sig,mu,orig_mu,N,seed=399):
     pointlist = []
     np.random.seed(seed)
     for i in range(N):
-        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0.0*np.eye(orig_mu.shape[0]))
+        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0.1*np.eye(orig_mu.shape[0]))
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
@@ -212,14 +212,14 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     settings.validate_frequency = cfg.validate_frequency
     settings.initialize_predictor = cfg.initialize_predictor
     settings.num_iter = cfg.num_iter
-    settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=True, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
+    settings.predictor = lropt.LinearPredictor(predict_mean = True, predict_cov = True, pretrain=True, lr=0.001,epochs = 200,knn_cov=False,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
     # settings.predictor = lropt.CovPredictor()
     # settings.predictor = lropt.DeepNormalModel(knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
     settings.data = data
     settings.cost_func = True
     settings.target_eta = cfg.target_eta
     settings.cvar_obj_only = True
-    settings.avg_scale = 0.2
+    settings.avg_scale = 0.6
     print("training start")
     try:
         result = trainer.train(settings=settings)
@@ -229,12 +229,6 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_trained_linear.pth')
     except:
         print("training failed")
-        # result_grid4 = trainer.grid(rholst=[0.5,1,2],init_A=A_fin, init_b=b_fin, seed=5,init_alpha=0., test_percentage=test_p,quantiles = (0.3,0.7), contextual = True, predictor = result._predictor)
-        # dfgrid4 = result_grid4.df
-        # dfgrid4 = dfgrid4.drop(columns=["z_vals","x_vals"])
-        # dfgrid4.to_csv(hydra_out_dir+'/'+str(seed)+'_linear_trained_grid.csv')
-    # except:
-    #     print("training failed ",finseed,cfg.eta,cfg.obj_scale)
     
     def plot_iters(dftrain,dftest, title, steps=2000, logscale=True,kappa=0):
         plt.rcParams.update({
@@ -312,46 +306,6 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
 
     try:
         plot_iters(result.df,result.df_validate, steps=num_iters, title="training_"+str(cfg.eta),kappa=settings.kappa)
-    except:
-        None
-
-    try:
-        beg1, end1 = 0, 100
-        beg2, end2 = 0, 100
-        plt.figure(figsize=(15, 4))
-        
-        if cfg.eta == 1 and cfg.obj_scale == 1:
-            plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_validate']), axis=1)[beg1:end1], np.mean(np.vstack(
-                dfgrid['Validate_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var validate set", marker="v", zorder=0)
-            plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
-            dfgrid3['Validate_val']), axis=1)[beg2:end2], color="tab:green", label="Linear pretrained validate set", marker="^", zorder=2)
-
-            plt.plot(np.mean(np.vstack(dfgrid['Avg_prob_test']), axis=1)[beg1:end1], np.mean(np.vstack(
-            dfgrid['Test_val']), axis=1)[beg1:end1], color="tab:blue", label=r"Mean-Var test set", marker="s", zorder=0)
-
-            plt.plot(np.mean(np.vstack(dfgrid3['Avg_prob_test']), axis=1)[beg2:end2], np.mean(np.vstack(
-            dfgrid3['Test_val']), axis=1)[beg2:end2], color="tab:green", label="Linear pretrained test set", marker="s", zorder=2)
-            
-        # plt.scatter(df_valid["Avg_prob_validate"][0],df_valid["Validate_val"][0], color="tab:orange", label="Linear trained validate set", marker="^", zorder=1)
-        # plt.scatter(df_test["Avg_prob_test"][0],df_test["Test_val"][0], color="tab:orange", label="Linear trained test set", marker="s", zorder=1)
-
-        # try:
-        #     plt.plot(np.mean(np.vstack(dfgrid4['Avg_prob_test']), axis=1)[beg2:end2], np.mean(np.vstack(
-        #         dfgrid4['Test_val']), axis=1)[beg2:end2], color="tab:red", label="Linear trained grid test", marker="s", zorder=2)
-        #     plt.plot(np.mean(np.vstack(dfgrid4['Avg_prob_validate']), axis=1)[beg2:end2], np.mean(np.vstack(
-        #         dfgrid4['Validate_val']), axis=1)[beg2:end2], color="tab:red", label="Linear trained grid validate", marker="^", zorder=2)
-        # except:
-        #     None
-
-        plt.ylabel("Objective value")
-        plt.xlabel(r"Probability of constraint violation $(\hat{\eta})$")
-        # plt.ylim([-9, 0])
-        plt.grid()
-        plt.scatter(context_probs,context_evals, color = "black", label="Scenario")
-        plt.scatter(nonrob_probs,nonrob_evals, color = "tab:purple", marker = "s", label="Non Robust")
-        plt.legend()
-        plt.savefig(hydra_out_dir+'/'+str(seed)+'_'+"port_objective_vs_violations_"+str(cfg.eta)+".pdf", bbox_inches='tight')
-        return None
     except:
         None
 

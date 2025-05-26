@@ -212,7 +212,7 @@ def min_max(eps,alpha,data,datamax,test,validate,seed,hydra_out_dir):
         data_df = {"outer_iter":outeriter, "context_val":context_val,'seed': seed, "alpha":alpha, "eps": eps,"test_lcx_prob": prob_vio,"test_lcx_obj":quanttest,"valid_lcx_prob": prob_vali,"valid_lcx_obj":quantvali, 'time':0, "in_val": t.value, "test_avg": test_avg, "valid_avg": vali_avg, "test_lcx_cvar": eval, "valid_lcx_cvar": eval_vali }
         single_row_df = pd.DataFrame(data_df, index=[0])
         single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+str(context_val)+'_'+"vals_lcx.csv",index=False)
-    return eval, prob_vio, eval_vali, prob_vali, t.value, test_avg, vali_avg,outeriter
+    return eval, prob_vio, eval_vali, prob_vali, t.value, test_avg, vali_avg,outeriter, quanttest, quantvali
 
 def lcx_exp(cfg,hydra_out_dir,seed):
     seed = initseed + 10*seed
@@ -226,8 +226,8 @@ def lcx_exp(cfg,hydra_out_dir,seed):
     eps = cfg.eps
     alpha = cfg.alpha
     try:
-        eval, prob_vio,eval_vali, prob_vali, in_sample, test_avg, vali_avg,outeriter = min_max(eps,alpha,train,datamax,test,validate,seed,hydra_out_dir)
-        data_df = {"outer_iter":outeriter,"context_val":context_val,'seed': seed, "alpha":alpha, "eps": eps,"test_lcx_prob": prob_vio,"test_lcx_obj":eval,"valid_lcx_prob": prob_vali,"valid_lcx_obj":eval_vali, 'time':time.time() - start_time, "in_val": in_sample, "test_avg": test_avg, "valid_avg": vali_avg}
+        eval, prob_vio,eval_vali, prob_vali, in_sample, test_avg, vali_avg,outeriter,quanttest, quantvali = min_max(eps,alpha,train,datamax,test,validate,seed,hydra_out_dir)
+        data_df = {"outer_iter":outeriter,"context_val":context_val,'seed': seed, "alpha":alpha, "eps": eps,"test_lcx_prob": prob_vio,"test_lcx_obj":quanttest,"valid_lcx_prob": prob_vali,"valid_lcx_obj":quantvali, 'time':time.time() - start_time, "in_val": in_sample, "test_avg": test_avg, "valid_avg": vali_avg,"test_lcx_cvar": eval, "valid_lcx_cvar": eval_vali}
         single_row_df = pd.DataFrame(data_df, index=[0])
         single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+str(context_val)+'_'+"vals_lcx.csv",index=False)
     except:

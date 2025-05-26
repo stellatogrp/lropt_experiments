@@ -220,7 +220,7 @@ def news_exp(cfg,hydra_out_dir,seed):
     settings.cvar_obj_only = True
     if cfg.eta == 0.05 and cfg.obj_scale == 1:
         # no training (steps = 1, look at initalized set)
-        settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
+        settings.predictor = lropt.LinearPredictor(predict_mean = True, pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
         settings.num_iter = 1 
         result2 = trainer.train(settings=settings)
         A_fin2 = result2.A
@@ -240,7 +240,7 @@ def news_exp(cfg,hydra_out_dir,seed):
         settings.num_iter = cfg.num_iter
         settings.init_A = init
         settings.init_b = init_bval
-        settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain = True,epochs = 20, lr = 0.001)
+        settings.predictor = lropt.LinearPredictor(predict_mean = True,predict_cov = True, n_neighbors = int(0.1*N*0.3), pretrain = True,epochs = 20, lr = 0.001)
         result = trainer.train(settings=settings)
         torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'trained_linear.pth')
     except:
