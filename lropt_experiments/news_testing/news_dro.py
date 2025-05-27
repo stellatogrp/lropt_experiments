@@ -50,10 +50,10 @@ def get_n_processes(max_n=np.inf):
 def gen_demand_cor(N,seed,x1, x2):
     np.random.seed(seed)
     sig = np.eye(2)
-    mu = np.array((6,9))
+    mu = np.array((3,4))
     points_list = []
     for i in range(N):
-        mu_shift = -0.4*x1[i] - 0.1*x2[i]
+        mu_shift = -0.2*x1[i] - 0.1*x2[i]
         newpoint = np.random.multivariate_normal(mu+mu_shift,sig)
         points_list.append(newpoint)
     return np.vstack(points_list)
