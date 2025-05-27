@@ -46,3 +46,4 @@ target_eta: 0.1
 Rval: 10
 cvar_obj_only: True
 avg_scale: 1
+demand: 3

@@ -15,7 +15,7 @@ eta: 0.15
 obj_scale: 1
 seed: 0
 lr: 0.001
-num_iter: 1
+num_iter: 300
 optimizer: "Adam"
 init_rho: 1.5
 init_lam: 1

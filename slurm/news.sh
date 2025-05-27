@@ -14,7 +14,7 @@ module purge
 module load anaconda3/2023.9
 conda activate lropt_rev
 
-python lropt_experiments/news_testing/news_bi.py --config-name=news_bi1.yaml
+python lropt_experiments/news_testing/news2.py --config-name=news_bi1.yaml
 # python lropt_experiments/news_testing/news_dro.py --config-name=news_dro.yaml
 
 

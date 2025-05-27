@@ -50,11 +50,11 @@ def get_n_processes(max_n=np.inf):
 def gen_demand_cor(N,seed,x1, x2):
     np.random.seed(seed)
     sig = np.eye(2)
-    mu = np.array((6,9))
+    mu = np.array((3,4))
     points_list = []
     for i in range(N):
-        mu_shift = -0.4*x1[i] - 0.1*x2[i]
-        newpoint = np.random.multivariate_normal(mu+mu_shift,sig)
+        mu_shift = -0.2*x1[i] - 0.1*x2[i]
+        newpoint = np.maximum(0,np.random.multivariate_normal(mu+mu_shift,sig))
         points_list.append(newpoint)
     return np.vstack(points_list)
 
@@ -220,7 +220,7 @@ def news_exp(cfg,hydra_out_dir,seed):
     settings.cvar_obj_only = True
     if cfg.eta == 0.05 and cfg.obj_scale == 1:
         # no training (steps = 1, look at initalized set)
-        settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
+        settings.predictor = lropt.LinearPredictor(predict_mean = True, pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
         settings.num_iter = 1 
         result2 = trainer.train(settings=settings)
         A_fin2 = result2.A
@@ -240,7 +240,7 @@ def news_exp(cfg,hydra_out_dir,seed):
         settings.num_iter = cfg.num_iter
         settings.init_A = init
         settings.init_b = init_bval
-        settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain = True,epochs = 20, lr = 0.001)
+        settings.predictor = lropt.LinearPredictor(predict_mean = True,predict_cov = False, n_neighbors = int(0.1*N*0.3), pretrain = True,epochs = 20, lr = 0.001)
         result = trainer.train(settings=settings)
         torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_'+'trained_linear.pth')
     except:
@@ -256,7 +256,7 @@ def news_exp(cfg,hydra_out_dir,seed):
         findfs = []
         for rho in eps_list:
             df_valid, df_test = trainer.compare_predictors(settings=settings,predictors_list = [result.predictor], rho_list=[rho*result.rho])
-            data_df = {'seed': seed, 'rho':rho, "a_seed":seed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_worst"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_worst"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime,"valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0], "valid_in": df_valid["Validate_insample"][0], "test_in": df_test["Test_insample"][0], "valid_avg": df_valid["Validate_val"][0],"avg_val": df_test["Test_val"][0],'valid_cvar': df_valid["Validate_cvar"][0], 'test_cvar': df_test["Test_cvar"][0]}
+            data_df = {'seed': seed, 'rho':rho, "a_seed":seed, 'eta':cfg.eta, 'gamma': cfg.obj_scale, 'init_rho': cfg.init_rho, 'valid_obj': df_valid["Validate_worst"][0], 'valid_prob': df_valid["Avg_prob_validate"][0],'test_obj': df_test["Test_worst"][0], 'test_prob': df_test["Avg_prob_test"][0],"time": solvetime,"valid_cover":df_valid["Coverage_validate"][0], "test_cover": df_test["Coverage_test"][0], "valid_in": df_valid["Validate_insample"][0], "test_in": df_test["Test_insample"][0], "avg_val": df_test["Test_val"][0],'valid_cvar': df_valid["Validate_cvar"][0], 'test_cvar': df_test["Test_cvar"][0]}
             single_row_df = pd.DataFrame(data_df, index=[0])
             findfs.append(single_row_df)
         findfs = pd.concat(findfs)
@@ -324,7 +324,7 @@ if __name__ == "__main__":
     N = 2000
     #eps_list = [0.5,0.7,0.9,1,1.1,1.3,1.5,2,2.5]
     eps_list = np.linspace(0.4,2,40)
-    k_init = np.array([2.,3.])
+    k_init = np.array([4.,5.])
     R = 10
     s = 1
     # in order for scenario to make sense, generate only 20 contexts

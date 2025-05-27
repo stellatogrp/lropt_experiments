@@ -10,14 +10,14 @@ hydra:
   sweeper:
     params:
       eta: 0.05,0.08,0.10,0.12,0.15,0.2
-      obj_scale: 0
+      avg_scale: 1,1.5,2.5,3,5,8
 eta: 0.15
 obj_scale: 1
 seed: 0
 lr: 0.001
-num_iter: 1
+num_iter: 300
 optimizer: "Adam"
-init_rho: 1
+init_rho: 1.5
 init_lam: 1
 init_mu: 1
 mu_multiplier: 1.005
@@ -44,7 +44,7 @@ seedvals: 0
 knnnum: .1
 epslim: 0.50360
 epslimtrain: 0.510120
-addval: 0.1
+addval: 0
 Fmults: 0.2
 knn_mult: 0.95
 deep: False
@@ -53,4 +53,5 @@ expected: True
 target_eta: 0.1
 knn_mult_train: 0
 cvar_obj_only: True
-avg_scale: 5
+cov_pred: True
+avg_scale: 1
