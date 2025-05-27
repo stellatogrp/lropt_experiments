@@ -129,7 +129,7 @@ if __name__ == "__main__":
     N = 2000
     #eps_list = [0.5,0.7,0.9,1,1.1,1.3,1.5,2,2.5]
     eps_list = np.linspace(0.5,2.5,40)
-    k_init = np.array([2.,3.])
+    k_init = np.array([4.,5.])
     R = 10
     s = 1
     # in order for scenario to make sense, generate only 20 contexts
