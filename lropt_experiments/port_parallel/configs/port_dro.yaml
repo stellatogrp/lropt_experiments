@@ -2,7 +2,7 @@
 #   - override hydra/launcher: joblib
 hydra:
   sweep:
-    dir: multirun/port_dro/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: multirun/port_dro_new/${now:%Y-%m-%d}/${now:%H-%M-%S}
     subdir: ${hydra.job.num}
   job:
     chdir: True
@@ -45,6 +45,6 @@ seedvals: 090
 epslim: 0.50360
 addval: 0.1
 Fmults: 0.2
-Nvals: 1000
+Nvals: 2000
 initmat: "eye"
 Kval: 1

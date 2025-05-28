@@ -15,7 +15,7 @@ module load anaconda3/2023.9
 conda activate lropt_rev
 
 # python lropt_experiments/inventory_parallel/inv_cvar.py --config-name=inv.yaml
-python lropt_experiments/inventory_parallel/inv_dro.py --config-name=inv_dro.yaml
+python lropt_experiments/inventory_parallel/inv_dro_sep.py --config-name=inv_dro.yaml
 #--config-name=port.yaml seed=10 eta=10 
 
 # python portfolio/plot_avg_10.py

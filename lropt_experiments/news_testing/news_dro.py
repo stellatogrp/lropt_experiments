@@ -69,7 +69,7 @@ def news_exp(cfg,hydra_out_dir,seed):
     init_bval = np.mean(train, axis=0)
 
     u = lropt.UncertainParameter(n,
-                            uncertainty_set=lropt.MRO(K=cfg.Kval, p=2, data=data, train_data=train, train=True))
+                            uncertainty_set=lropt.MRO(K=cfg.Kval, p=2, data=data, train_data=np.mean(train, axis=0), train=True))
     # Formulate the Robust Problem
     x_r = cp.Variable(n)
     t = cp.Variable()
@@ -77,7 +77,7 @@ def news_exp(cfg,hydra_out_dir,seed):
     p = lropt.ContextParameter(2, data=p_data)
     p_x = cp.Variable(n)
     objective = cp.Minimize(t)
-    constraints = [lropt.max_of_uncertain([-p[0]*x_r[0] - p[1]*x_r[1],-p[0]*x_r[0] - p_x[1]*u[1], -p_x[0]*u[0] - p[1]*x_r[1], -p_x[0]*u[0]- p_x[1]*u[1]]) + k@x_r <= t]
+    constraints = [lropt.max_of_uncertain([-p[0]*x_r[0] - p[1]*x_r[1]+ k@x_r -t,-p[0]*x_r[0] - p_x[1]*u[1]+ k@x_r -t, -p_x[0]*u[0] - p[1]*x_r[1]+ k@x_r -t, -p_x[0]*u[0]- p_x[1]*u[1]+ k@x_r -t]) <= 0]
     constraints += [p_x == p]
     constraints += [x_r >= 0]
 
