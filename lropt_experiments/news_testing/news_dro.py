@@ -68,49 +68,51 @@ def news_exp(cfg,hydra_out_dir,seed):
     init = sc.linalg.sqrtm(np.cov(train.T))
     init_bval = np.mean(train, axis=0)
 
-    u = lropt.UncertainParameter(n,
-                            uncertainty_set=lropt.MRO(K=cfg.Kval, p=2, data=data, train_data=np.mean(train, axis=0), train=True))
-    # Formulate the Robust Problem
-    x_r = cp.Variable(n)
-    t = cp.Variable()
-    k = lropt.ContextParameter(2, data=k_data)
-    p = lropt.ContextParameter(2, data=p_data)
-    p_x = cp.Variable(n)
-    objective = cp.Minimize(t)
-    constraints = [lropt.max_of_uncertain([-p[0]*x_r[0] - p[1]*x_r[1]+ k@x_r -t,-p[0]*x_r[0] - p_x[1]*u[1]+ k@x_r -t, -p_x[0]*u[0] - p[1]*x_r[1]+ k@x_r -t, -p_x[0]*u[0]- p_x[1]*u[1]+ k@x_r -t]) <= 0]
-    constraints += [p_x == p]
-    constraints += [x_r >= 0]
+    for context_v in range(20):
+        train = data[context_inds[context_v]]
+        u = lropt.UncertainParameter(n,
+                                uncertainty_set=lropt.MRO(K=train.shape[0], p=2, data=data[context_inds[context_v]+ valid_inds[context_v] + test_inds[context_v]], train_data=train, train=True))
+        # Formulate the Robust Problem
+        x_r = cp.Variable(n)
+        t = cp.Variable()
+        k = lropt.ContextParameter(2, data=k_data[context_inds[context_v]+ valid_inds[context_v] + test_inds[context_v]])
+        p = lropt.ContextParameter(2, data=p_data[context_inds[context_v]+ valid_inds[context_v] + test_inds[context_v]])
+        p_x = cp.Variable(n)
+        objective = cp.Minimize(t)
+        constraints = [lropt.max_of_uncertain([-p[0]*x_r[0] - p[1]*x_r[1]+ k@x_r -t,-p[0]*x_r[0] - p_x[1]*u[1]+ k@x_r -t, -p_x[0]*u[0] - p[1]*x_r[1]+ k@x_r -t, -p_x[0]*u[0]- p_x[1]*u[1]+ k@x_r -t]) <= 0]
+        constraints += [p_x == p]
+        constraints += [x_r >= 0]
 
-    eval_exp = k@x_r + cp.maximum(-p[0]*x_r[0] - p[1]*x_r[1],-p[0]*x_r[0] - p[1]*u[1], -p[0]*u[0] - p[1]*x_r[1], -p[0]*u[0]- p[1]*u[1]) 
+        eval_exp = k@x_r + cp.maximum(-p[0]*x_r[0] - p[1]*x_r[1],-p[0]*x_r[0] - p[1]*u[1], -p[0]*u[0] - p[1]*x_r[1], -p[0]*u[0]- p[1]*u[1]) 
 
-    prob = lropt.RobustProblem(objective, constraints,eval_exp = eval_exp)
+        prob = lropt.RobustProblem(objective, constraints,eval_exp = eval_exp)
 
-    trainer = lropt.Trainer(prob)
-    settings = lropt.TrainerSettings()
-    settings.data = data
-    settings.target_eta = 0.1
-    settings.init_A = np.eye(n)
-    settings.init_b = np.zeros(n)
-    settings.seed = 5
-    settings.contextual = False
-    settings.test_percentage=cfg.test_percentage
-    settings.validate_percentage = cfg.validate_percentage
-    result_grid = trainer.grid(rholst=eps_list,settings = settings)
-    dfgrid = result_grid.df
-    dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
-    dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'dro_grid.csv')
-    solvetime = 0
-    try:
-        prob.solve()
-        solvetime = prob.solver_stats.solve_time
-    except:
-        print("solving failed")
-    try:
-        data_df = {"seed":seed,"time": solvetime}
-        single_row_df = pd.DataFrame(data_df, index=[0])
-        single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals.csv",index=False)
-    except:
-        print("save failed")
+        trainer = lropt.Trainer(prob)
+        settings = lropt.TrainerSettings()
+        settings.data = data[context_inds[context_v]+ valid_inds[context_v] + test_inds[context_v]]
+        settings.target_eta = 0.1
+        settings.init_A = np.eye(n)
+        settings.init_b = np.zeros(n)
+        settings.seed = 5
+        settings.contextual = False
+        settings.test_percentage=cfg.test_percentage
+        settings.validate_percentage = cfg.validate_percentage
+        result_grid = trainer.grid(rholst=eps_list,settings = settings)
+        dfgrid = result_grid.df
+        dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
+        dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+str(context_v)+'_dro_grid.csv')
+        solvetime = 0
+        try:
+            prob.solve()
+            solvetime = prob.solver_stats.solve_time
+        except:
+            print("solving failed")
+        try:
+            data_df = {"seed":seed,"time": solvetime}
+            single_row_df = pd.DataFrame(data_df, index=[0])
+            single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+str(context_v)+"_vals.csv",index=False)
+        except:
+            print("save failed")
 
 
 @hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/news_testing/configs",config_name = "news.yaml", version_base = None)
@@ -149,7 +151,9 @@ if __name__ == "__main__":
     train_indices = [i for i in range(N) if i not in test_valid_indices]
     context_inds = {}
     test_inds = {}
+    valid_inds = {}
     for j in range(num_context):
-      context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
-      test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
+        context_inds[j]= [i for i in  train_indices  if j*num_reps <= i <= (j+1)*num_reps]
+        test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
+        valid_inds[j]= [i for i in valid_indices if j*num_reps <= i <= (j+1)*num_reps]
     main_func()

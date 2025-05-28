@@ -93,7 +93,7 @@ def inv_exp(cfg,hydra_out_dir,seed,idxx):
         train = data[context_inds[context_v]]
 
         u = lropt.UncertainParameter(n,
-                                        uncertainty_set = lropt.MRO(K=30, p=2, data=data[context_inds[context_v]+ valid_inds[context_v] + test_inds[context_v]], train_data = train, train=True))
+                                        uncertainty_set = lropt.MRO(K=train.shape[0], p=2, data=data[context_inds[context_v]+ valid_inds[context_v] + test_inds[context_v]], train_data = train, train=True))
         # formulate cvxpy variable
         L = cp.Variable()
         s = cp.Variable(n)
