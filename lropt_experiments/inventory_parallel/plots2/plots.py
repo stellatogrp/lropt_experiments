@@ -26,7 +26,7 @@ objs = [0.5,1,2]
 seeds1 = [0,10,20,30,40,50,60,70,80,90]
 foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/worst_new/cvar/1.5/"
 foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/worst_new/cvar/1.5/"
-foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/worst/dro/30/"
+foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/worst_new/dro_sep/30/"
 # foldername6 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/cvar/lcx/30_1000/"
 dfs_all = {}
 quantiles = [0.25,0.75]
@@ -99,17 +99,38 @@ for q in quantiles:
     quantile_values = grouped[collist_grid].quantile(q).add_prefix(str(q)+"_")
     dfs_mv_grid = pd.concat([dfs_mv_grid, quantile_values], axis=1)
 dfs_mv_grid.to_csv(path+"pretrained.csv")
+# df_dro = []
+# running_ind = 0
+# newfolder = foldername3+str(running_ind)
+# for seed in range(R):
+#     try:
+#         df = pd.read_csv(newfolder+'/'+str(seed)+"_dro_grid.csv")
+#         df['seed'] = seeds1[seed]
+#         df_dro.append(df)
+#     except:
+#         print(3,eta,obj,seed)
+# df_dro = pd.concat(df_dro)
 df_dro = []
 running_ind = 0
 newfolder = foldername3+str(running_ind)
 for seed in range(R):
-    try:
-        df = pd.read_csv(newfolder+'/'+str(seed)+"_dro_grid.csv")
-        df['seed'] = seeds1[seed]
-        df_dro.append(df)
-    except:
-        print(3,eta,obj,seed)
+    df_dro_temp = []
+    for context in range(10):
+        try:
+            df = pd.read_csv(newfolder+'/'+str(seed)+'_'+str(context)+"_dro_grid.csv")
+            df['seed'] = seeds1[seed]
+            df_dro_temp.append(df)
+        except:
+            print(3,seed)
+    df_dro_temp = pd.concat(df_dro_temp)
+    collist = list(df_dro_temp.columns)
+    collist.remove("Probability_violations_validate")
+    collist.remove('Probability_violations_test')
+    collist.remove("step")
+    grouped = df_dro_temp.groupby(["Rho"], as_index=False)
+    df_dro.append(grouped[collist].mean())
 df_dro = pd.concat(df_dro)
+
 
 df_nonrob = []
 running_ind = 0
@@ -199,9 +220,9 @@ dfs_cat = pd.concat(dfs_cat)
 # df_lcx = mean_vals
 inds = {}
 #target_list = [0.01,0.05,0.1,0.15,0.20]
-target_list = [0,0.01,0.02,0.03,0.05,0.08,0.09,0.1,0.12,0.15,0.18,0.20]
+target_list = [0,0.01,0.02,0.03,0.05,0.08,0.083,0.09,0.1,0.12,0.15,0.18,0.20]
 dfs_best = {}
-dif=0.01
+dif=0.0
 curdif = dif
 for target in target_list:
     inds[target] = []
@@ -213,9 +234,9 @@ for target in target_list:
             if mindif >= dif:
                 curdif = mindif
                 print(curdif)
-            best_idx = np.argmin(dfs_cat[dfs_cat["seed"] == seed][abs(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)<=curdif]["valid_obj"])
+            best_idx = np.argmin(dfs_cat[dfs_cat["seed"] == seed][dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target<=curdif]["valid_obj"])
             inds[target].append(best_idx)
-            cur_df = dfs_cat[dfs_cat["seed"] == seed][abs(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            cur_df = dfs_cat[dfs_cat["seed"] == seed][dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target<=curdif].iloc[best_idx:best_idx+1]
             dfs_best[target].append(cur_df)
             # best_idx = np.argmin(np.abs(np.array(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)))
             # inds[target].append(best_idx)
@@ -233,8 +254,8 @@ for target in target_list:
             mindif = np.min(abs(df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target))
             if mindif >= dif:
                 curdif = mindif
-            best_idx = np.argmin(df_mv[df_mv["seed"] == seed][abs(df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target)<=curdif]["Validate_cvar"])
-            cur_df = df_mv[df_mv["seed"] == seed][abs(df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            best_idx = np.argmin(df_mv[df_mv["seed"] == seed][df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target<=curdif]["Validate_worst"])
+            cur_df = df_mv[df_mv["seed"] == seed][df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target<=curdif].iloc[best_idx:best_idx+1]
             dfs_best_mv[target].append(cur_df)
         except:
             print(seed)
@@ -248,8 +269,8 @@ for target in target_list:
             mindif = np.min(abs(df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target))
             if mindif >= dif:
                 curdif = mindif
-            best_idx = np.argmin(df_pre[df_pre["seed"] == seed][abs(df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target)<=curdif]["Validate_cvar"])
-            cur_df = df_pre[df_pre["seed"] == seed][abs(df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            best_idx = np.argmin(df_pre[df_pre["seed"] == seed][df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target<=curdif]["Validate_worst"])
+            cur_df = df_pre[df_pre["seed"] == seed][df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target<=curdif].iloc[best_idx:best_idx+1]
             dfs_best_pre[target].append(cur_df)
         except:
             print(seed)
@@ -264,8 +285,8 @@ for target in target_list:
             mindif = np.min(abs(df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target))
             if mindif >= dif:
                 curdif = mindif
-            best_idx = np.argmin(df_dro[df_dro["seed"] == seed][abs(df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target)<=curdif]["Validate_cvar"])
-            cur_df = df_dro[df_dro["seed"] == seed][abs(df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            best_idx = np.argmin(df_dro[df_dro["seed"] == seed][df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target<=curdif]["Validate_worst"])
+            cur_df = df_dro[df_dro["seed"] == seed][df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target<=curdif].iloc[best_idx:best_idx+1]
             dfs_best_dro[target].append(cur_df)
         except:
             print(seed)

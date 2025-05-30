@@ -26,39 +26,40 @@ objs = [1,1.5,2.5,3,5,8]
 etas1 = [0.05,0.1,0.12,0.15,0.2,0.3]
 objs1 = [0.9,0.6,0.5,0.4,0.2,0.1]
 seeds1 = [0,10,20,30,40,50,60,70,80,90]
-foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/worst/obj4/10_2000/"
-foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/worst/obj4/10_2000/"
-foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/worst/dro/10_2000/"
+foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/worst/fixed/10_2000/"
+foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/worst/bi/10_2000/"
+foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/worst/dro_sep/10_2000/"
 foldername5 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/worst/delage/10_2000/"
 foldername6 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/worst/lcx/10_2000/"
+foldername7 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/worst/dro/10_2000/"
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
-running_ind = 0
-for obj in objs:
-    dfs_all[obj] = []
-for eta in etas:
-    for obj in objs:
-        newfolder = foldername4+str(running_ind)
-        for seed in range(R):
-            try:
-                df = pd.read_csv(newfolder+'/'+str(seed)+"_vals.csv")
-                dfs_all[obj].append(df)
-            except:
-                print(1,eta,obj,seed)
-        running_ind += 1
-for obj in objs:
-    dfs_all[obj] = pd.concat(dfs_all[obj])
-collist = list(dfs_all[obj].columns)[5:]
-ecollist = ["eta"]+ collist
-for obj in objs:
-    grouped = dfs_all[obj].groupby(["eta"], as_index=False)
-    mean_vals = grouped[collist].mean().add_prefix("mean_")
-    dfs[obj] = mean_vals
-    for q in quantiles:
-        quantile_values = grouped[collist].quantile(q)
-        quantile_values = grouped[collist].quantile(q).add_prefix(str(q)+"_")
-        dfs[obj] = pd.concat([dfs[obj], quantile_values], axis=1)
+# running_ind = 0
+# for obj in objs:
+#     dfs_all[obj] = []
+# for eta in etas:
+#     for obj in objs:
+#         newfolder = foldername4+str(running_ind)
+#         for seed in range(R):
+#             try:
+#                 df = pd.read_csv(newfolder+'/'+str(seed)+"_vals.csv")
+#                 dfs_all[obj].append(df)
+#             except:
+#                 print(1,eta,obj,seed)
+#         running_ind += 1
+# for obj in objs:
+#     dfs_all[obj] = pd.concat(dfs_all[obj])
+# collist = list(dfs_all[obj].columns)[5:]
+# ecollist = ["eta"]+ collist
+# for obj in objs:
+#     grouped = dfs_all[obj].groupby(["eta"], as_index=False)
+#     mean_vals = grouped[collist].mean().add_prefix("mean_")
+#     dfs[obj] = mean_vals
+#     for q in quantiles:
+#         quantile_values = grouped[collist].quantile(q)
+#         quantile_values = grouped[collist].quantile(q).add_prefix(str(q)+"_")
+#         dfs[obj] = pd.concat([dfs[obj], quantile_values], axis=1)
     # dfs[obj].to_csv(path+"gamma_"+str(obj)+"_values.csv")
 df_pre = []
 running_ind = 0
@@ -69,7 +70,7 @@ for seed in range(R):
         df['seed'] = seeds1[seed]
         df_pre.append(df)
     except:
-        print(2,eta,obj,seed)
+        print(2,seed)
 df_pre = pd.concat(df_pre)
 dfs_pre = []
 collist_grid = ["Test_val","Avg_prob_test","Validate_val","Avg_prob_validate"]
@@ -90,7 +91,7 @@ for seed in range(R):
         df['seed'] = seeds1[seed]
         df_mv.append(df)
     except:
-        print(3,eta,obj,seed)
+        print(3,seed)
 df_mv = pd.concat(df_mv)
 dfs_mv = []
 collist_grid = ["Test_val","Avg_prob_test","Validate_val","Avg_prob_validate"]
@@ -106,13 +107,34 @@ df_dro = []
 running_ind = 0
 newfolder = foldername3+str(running_ind)
 for seed in range(R):
+    df_dro_temp = []
+    for context in range(20):
+        try:
+            df = pd.read_csv(newfolder+'/'+str(seed)+'_'+str(context)+"_dro_grid.csv")
+            df['seed'] = seeds1[seed]
+            df_dro_temp.append(df)
+        except:
+            print(3,seed)
+    df_dro_temp = pd.concat(df_dro_temp)
+    collist = list(df_dro_temp.columns)
+    collist.remove("Probability_violations_validate")
+    collist.remove('Probability_violations_test')
+    collist.remove("step")
+    grouped = df_dro_temp.groupby(["Rho"], as_index=False)
+    df_dro.append(grouped[collist].mean())
+df_dro = pd.concat(df_dro)
+
+df_dro1 = []
+running_ind = 0
+newfolder = foldername7+str(running_ind)
+for seed in range(R):
     try:
         df = pd.read_csv(newfolder+'/'+str(seed)+"_dro_grid.csv")
         df['seed'] = seeds1[seed]
-        df_dro.append(df)
+        df_dro1.append(df)
     except:
-        print(3,eta,obj,seed)
-df_dro = pd.concat(df_dro)
+        print(3,seed)
+df_dro1 = pd.concat(df_dro1)
 
 df_nonrob = []
 running_ind = 0
@@ -122,7 +144,7 @@ for seed in range(R):
         df = pd.read_csv(newfolder+'/'+str(seed)+"_vals_nonrob.csv")
         df_nonrob.append(df)
     except:
-        print(4,eta,obj,seed)
+        print(4,seed)
 df_nonrob = pd.concat(df_nonrob)
 # plt.rcParams.update({
 #     "text.usetex":True,
@@ -215,9 +237,9 @@ mean_vals = grouped[collist].mean()
 df_lcx = mean_vals
 inds = {}
 #target_list = [0.01,0.05,0.1,0.15,0.20]
-target_list = [0,0.01,0.02,0.03,0.05,0.08,0.1,0.12,0.15,0.18,0.20]
+target_list = [0,0.01,0.02,0.03,0.05,0.08,0.09,0.1,0.12,0.15,0.18,0.20]
 dfs_best = {}
-dif=0.01
+dif=0.0
 curdif = dif
 for target in target_list:
     inds[target] = []
@@ -229,9 +251,9 @@ for target in target_list:
             if mindif >= dif:
                 curdif = mindif
                 print(curdif)
-            best_idx = np.argmin(dfs_cat[dfs_cat["seed"] == seed][abs(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)<=curdif]["valid_obj"])
+            best_idx = np.argmin(dfs_cat[dfs_cat["seed"] == seed][dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target<=curdif]["valid_obj"])
             inds[target].append(best_idx)
-            cur_df = dfs_cat[dfs_cat["seed"] == seed][abs(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            cur_df = dfs_cat[dfs_cat["seed"] == seed][dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target<=curdif].iloc[best_idx:best_idx+1]
             dfs_best[target].append(cur_df)
             # best_idx = np.argmin(np.abs(np.array(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)))
             # inds[target].append(best_idx)
@@ -241,7 +263,6 @@ for target in target_list:
             print(seed)
     dfs_best[target] = pd.concat(dfs_best[target])   
 dfs_best_o = {}
-dif=0.001
 curdif = dif
 for target in target_list:
     inds[target] = []
@@ -253,9 +274,9 @@ for target in target_list:
             if mindif >= dif:
                 curdif = mindif
                 print(curdif)
-            best_idx = np.argmin(dfs_cat_o[dfs_cat_o["seed"] == seed][abs(dfs_cat_o[dfs_cat_o["seed"] == seed]["valid_prob"] - target)<=curdif]["valid_obj"])
+            best_idx = np.argmin(dfs_cat_o[dfs_cat_o["seed"] == seed][dfs_cat_o[dfs_cat_o["seed"] == seed]["valid_prob"] - target<=curdif]["valid_obj"])
             inds[target].append(best_idx)
-            cur_df = dfs_cat_o[dfs_cat_o["seed"] == seed][abs(dfs_cat_o[dfs_cat_o["seed"] == seed]["valid_prob"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            cur_df = dfs_cat_o[dfs_cat_o["seed"] == seed][dfs_cat_o[dfs_cat_o["seed"] == seed]["valid_prob"] - target<=curdif].iloc[best_idx:best_idx+1]
             dfs_best_o[target].append(cur_df)
         except:
             print(seed)
@@ -269,8 +290,8 @@ for target in target_list:
             mindif = np.min(abs(df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target))
             if mindif >= dif:
                 curdif = mindif
-            best_idx = np.argmin(df_mv[df_mv["seed"] == seed][abs(df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target)<=curdif]["Validate_val"])
-            cur_df = df_mv[df_mv["seed"] == seed][abs(df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            best_idx = np.argmin(df_mv[df_mv["seed"] == seed][df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target<=curdif]["Validate_worst"])
+            cur_df = df_mv[df_mv["seed"] == seed][df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target<=curdif].iloc[best_idx:best_idx+1]
             dfs_best_mv[target].append(cur_df)
         except:
             print(seed)
@@ -284,8 +305,8 @@ for target in target_list:
             mindif = np.min(abs(df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target))
             if mindif >= dif:
                 curdif = mindif
-            best_idx = np.argmin(df_pre[df_pre["seed"] == seed][abs(df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target)<=curdif]["Validate_val"])
-            cur_df = df_pre[df_pre["seed"] == seed][abs(df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            best_idx = np.argmin(df_pre[df_pre["seed"] == seed][df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target<=curdif]["Validate_worst"])
+            cur_df = df_pre[df_pre["seed"] == seed][df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target<=curdif].iloc[best_idx:best_idx+1]
             dfs_best_pre[target].append(cur_df)
         except:
             print(seed)
@@ -300,12 +321,28 @@ for target in target_list:
             mindif = np.min(abs(df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target))
             if mindif >= dif:
                 curdif = mindif
-            best_idx = np.argmin(df_dro[df_dro["seed"] == seed][abs(df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target)<=curdif]["Validate_val"])
-            cur_df = df_dro[df_dro["seed"] == seed][abs(df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            best_idx = np.argmin(df_dro[df_dro["seed"] == seed][df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target<=curdif]["Validate_worst"])
+            cur_df = df_dro[df_dro["seed"] == seed][df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target<=curdif].iloc[best_idx:best_idx+1]
             dfs_best_dro[target].append(cur_df)
         except:
             print(seed)
     dfs_best_dro[target] = pd.concat(dfs_best_dro[target])  
+
+dfs_best_dro1 = {}
+for target in target_list:
+    dfs_best_dro1[target] = []
+    for seed in seeds1:
+        try:
+            curdif = dif
+            mindif = np.min(abs(df_dro1[df_dro1["seed"] == seed]["Avg_prob_validate"] - target))
+            if mindif >= dif:
+                curdif = mindif
+            best_idx = np.argmin(df_dro1[df_dro1["seed"] == seed][df_dro1[df_dro1["seed"] == seed]["Avg_prob_validate"] - target<=curdif]["Validate_worst"])
+            cur_df = df_dro1[df_dro1["seed"] == seed][df_dro1[df_dro1["seed"] == seed]["Avg_prob_validate"] - target<=curdif].iloc[best_idx:best_idx+1]
+            dfs_best_dro1[target].append(cur_df)
+        except:
+            print(seed)
+    dfs_best_dro1[target] = pd.concat(dfs_best_dro1[target])  
 
 dfs_best_lcx = {}
 for target in target_list:
@@ -316,15 +353,15 @@ for target in target_list:
             mindif = np.min(abs(df_lcx[df_lcx["seed"] == seed]["valid_lcx_prob"] - target))
             if mindif >= dif:
                 curdif = mindif
-            best_idx = np.argmin(df_lcx[df_lcx["seed"] == seed][abs(df_lcx[df_lcx["seed"] == seed]["valid_lcx_prob"] - target)<=curdif]["valid_lcx_obj"])
-            cur_df = df_lcx[df_lcx["seed"] == seed][abs(df_lcx[df_lcx["seed"] == seed]["valid_lcx_prob"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            best_idx = np.argmin(df_lcx[df_lcx["seed"] == seed][df_lcx[df_lcx["seed"] == seed]["valid_lcx_prob"] - target<=curdif]["valid_lcx_obj"])
+            cur_df = df_lcx[df_lcx["seed"] == seed][df_lcx[df_lcx["seed"] == seed]["valid_lcx_prob"] - target<=curdif].iloc[best_idx:best_idx+1]
             dfs_best_lcx[target].append(cur_df)
         except:
             print(seed)
     dfs_best_lcx[target] = pd.concat(dfs_best_lcx[target])  
 plot_data = []
 for target in target_list:
-    data = {'target':target,'test_prob': dfs_best[target]["test_prob"].mean(),'test_obj': dfs_best[target]["test_obj"].mean(),'0.25_test_obj': dfs_best[target]["test_obj"].quantile(0.25), '0.75_test_obj': dfs_best[target]["test_obj"].quantile(0.75),'test_prob_o': dfs_best_o[target]["test_prob"].mean(),'test_obj_o': dfs_best_o[target]["test_obj"].mean(),'0.25_test_obj_o': dfs_best_o[target]["test_obj"].quantile(0.25), '0.75_test_obj_o': dfs_best_o[target]["test_obj"].quantile(0.75),'mv_prob': dfs_best_mv[target]["Avg_prob_test"].mean(),'mv_obj':dfs_best_mv[target]["Test_worst"].mean(), '0.25_mv_obj':dfs_best_mv[target]["Test_worst"].quantile(0.25),  '0.75_mv_obj':dfs_best_mv[target]["Test_worst"].quantile(0.75),'pre_prob': dfs_best_pre[target]["Avg_prob_test"].mean(),'pre_obj':dfs_best_pre[target]["Test_worst"].mean(), '0.25_pre_obj':dfs_best_pre[target]["Test_worst"].quantile(0.25),  '0.75_pre_obj':dfs_best_pre[target]["Test_worst"].quantile(0.75),'dro_prob': dfs_best_dro[target]["Avg_prob_test"].mean(),'dro_obj':dfs_best_dro[target]["Test_worst"].mean(), '0.25_dro_obj':dfs_best_dro[target]["Test_worst"].quantile(0.25),  '0.75_dro_obj':dfs_best_dro[target]["Test_worst"].quantile(0.75),"nonrob_prob":df_nonrob["nonrob_prob"].mean(), "nonrob_obj": df_nonrob["nonrob_obj"].mean(), "scenario_prob":df_nonrob["scenario_probs"].mean(), "scenario_obj": df_nonrob["scenario_obj"].mean(),'0.25_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.25),  '0.75_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.75), '0.25_scenario_obj':df_nonrob["scenario_obj"].quantile(0.25),  '0.75_scenario_obj':df_nonrob["scenario_obj"].quantile(0.75),
+    data = {'target':target,'test_prob': dfs_best[target]["test_prob"].mean(),'test_obj': dfs_best[target]["test_obj"].mean(),'0.25_test_obj': dfs_best[target]["test_obj"].quantile(0.25), '0.75_test_obj': dfs_best[target]["test_obj"].quantile(0.75),'test_prob_o': dfs_best_o[target]["test_prob"].mean(),'test_obj_o': dfs_best_o[target]["test_obj"].mean(),'0.25_test_obj_o': dfs_best_o[target]["test_obj"].quantile(0.25), '0.75_test_obj_o': dfs_best_o[target]["test_obj"].quantile(0.75),'mv_prob': dfs_best_mv[target]["Avg_prob_test"].mean(),'mv_obj':dfs_best_mv[target]["Test_worst"].mean(), '0.25_mv_obj':dfs_best_mv[target]["Test_worst"].quantile(0.25),  '0.75_mv_obj':dfs_best_mv[target]["Test_worst"].quantile(0.75),'pre_prob': dfs_best_pre[target]["Avg_prob_test"].mean(),'pre_obj':dfs_best_pre[target]["Test_worst"].mean(), '0.25_pre_obj':dfs_best_pre[target]["Test_worst"].quantile(0.25),  '0.75_pre_obj':dfs_best_pre[target]["Test_worst"].quantile(0.75),'dro_prob': dfs_best_dro[target]["Avg_prob_test"].mean(),'dro_obj':dfs_best_dro[target]["Test_worst"].mean(), '0.25_dro_obj':dfs_best_dro[target]["Test_worst"].quantile(0.25),  '0.75_dro_obj':dfs_best_dro[target]["Test_worst"].quantile(0.75),'dro_prob1': dfs_best_dro1[target]["Avg_prob_test"].mean(),'dro_obj1':dfs_best_dro1[target]["Test_worst"].mean(), '0.25_dro_obj1':dfs_best_dro1[target]["Test_worst"].quantile(0.25),  '0.75_dro_obj1':dfs_best_dro1[target]["Test_worst"].quantile(0.75),"nonrob_prob":df_nonrob["nonrob_prob"].mean(), "nonrob_obj": df_nonrob["nonrob_obj"].mean(), "scenario_prob":df_nonrob["scenario_probs"].mean(), "scenario_obj": df_nonrob["scenario_obj"].mean(),'0.25_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.25),  '0.75_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.75), '0.25_scenario_obj':df_nonrob["scenario_obj"].quantile(0.25),  '0.75_scenario_obj':df_nonrob["scenario_obj"].quantile(0.75),
             'lcx_prob': dfs_best_lcx[target]["test_lcx_prob"].mean(),'lcx_obj':dfs_best_lcx[target]["test_lcx_obj"].mean(), '0.25_lcx_obj':dfs_best_lcx[target]["test_lcx_obj"].quantile(0.25),  '0.75_lcx_obj':dfs_best_lcx[target]["test_lcx_obj"].quantile(0.75),
     "test_avg_o": dfs_best_o[target]["avg_val"].mean(),
     "test_avg": dfs_best[target]["avg_val"].mean(), "0.25_test_avg": dfs_best[target]["avg_val"].quantile(0.25),"0.75_test_avg": dfs_best[target]["avg_val"].quantile(0.75), "test_avg_mv": dfs_best_mv[target]["Test_val"].mean(), "0.25_test_avg_mv": dfs_best_mv[target]["Test_val"].quantile(0.25),"0.75_test_avg_mv": dfs_best_mv[target]["Test_val"].quantile(0.75),
@@ -333,18 +370,23 @@ for target in target_list:
             "test_avg_lcx": dfs_best_lcx[target]["test_avg"].mean(),
             "test_avg_dro": dfs_best_dro[target]["Test_val"].mean(),
             "0.25_test_avg_dro": dfs_best_dro[target]["Test_val"].quantile(0.25),"0.75_test_avg_dro": dfs_best_dro[target]["Test_val"].quantile(0.75),
+            "test_avg_dro1": dfs_best_dro1[target]["Test_val"].mean(),
+            "0.25_test_avg_dro1": dfs_best_dro1[target]["Test_val"].quantile(0.25),"0.75_test_avg_dro1": dfs_best_dro1[target]["Test_val"].quantile(0.75),
             "test_avg_scene":df_nonrob["scenario_avg"].mean(),
             "0.25_test_avg_scene":df_nonrob["scenario_avg"].quantile(0.25),
             "0.75_test_avg_scene":df_nonrob["scenario_avg"].quantile(0.75),
             "test_in":dfs_best[target]["test_in"].mean(), 
             "test_in_lcx": dfs_best_lcx[target]["in_val"].mean(),
             "test_in_o": dfs_best_o[target]["test_in"].mean(),"test_in_pre":dfs_best_pre[target]["Test_insample"].mean(), "test_in_mv":dfs_best_mv[target]["Test_insample"].mean(), "test_in_scene":df_nonrob["scenario_in"].mean(), "test_in_dro": dfs_best_dro[target]["Test_insample"].mean(),
+             "test_in_dro1": dfs_best_dro1[target]["Test_insample"].mean(),
             "test_cvar": dfs_best[target]["test_cvar"].mean(),
             "test_o_cvar": dfs_best_o[target]["test_cvar"].mean(),
             'test_mv_cvar':dfs_best_mv[target]["Test_cvar"].mean(), '0.25_mv_cvar':dfs_best_mv[target]["Test_cvar"].quantile(0.25),  '0.75_mv_cvar':dfs_best_mv[target]["Test_cvar"].quantile(0.75),
             'test_pre_cvar':dfs_best_pre[target]["Test_cvar"].mean(),  
             '0.25_pre_cvar':dfs_best_pre[target]["Test_cvar"].quantile(0.25),  '0.75_pre_cvar':dfs_best_pre[target]["Test_cvar"].quantile(0.75),'test_dro_cvar':dfs_best_dro[target]["Test_cvar"].mean(), '0.25_dro_cvar':dfs_best_dro[target]["Test_cvar"].quantile(0.25),  '0.75_dro_cvar':dfs_best_dro[target]["Test_cvar"].quantile(0.75),
+            'test_dro_cvar1':dfs_best_dro1[target]["Test_cvar"].mean(), '0.25_dro_cvar1':dfs_best_dro1[target]["Test_cvar"].quantile(0.25),  '0.75_dro_cvar1':dfs_best_dro1[target]["Test_cvar"].quantile(0.75),
             "test_scene_cvar":df_nonrob["scenario_cvar"].mean(),
+            'test_lcx_cvar':dfs_best_lcx[target]["test_lcx_cvar"].mean(),  
             }
     data = pd.DataFrame(data, index=[0])
     plot_data.append(data)
@@ -376,8 +418,8 @@ def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=None):
     plt.plot(np.array(plot_data["dro_prob"]),np.array(plot_data["dro_obj"]), label = "DRO test" ,color = "tab:olive",marker = "v")
     plt.fill_between(np.array(plot_data["dro_prob"]),np.array(plot_data["0.25_dro_obj"]),np.array(plot_data["0.75_dro_obj"]),alpha = 0.25, color = "tab:olive")
 
-    # plt.plot(np.array(plot_data["lcx_prob"]),np.array(plot_data["lcx_obj"]), label = "LCX test" ,color = "tab:pink",marker = "s")
-    # plt.fill_between(np.array(plot_data["lcx_prob"]),np.array(plot_data["0.25_lcx_obj"]),np.array(plot_data["0.75_lcx_obj"]),alpha = 0.25, color = "tab:pink")
+    plt.plot(np.array(plot_data["lcx_prob"]),np.array(plot_data["lcx_obj"]), label = "LCX test" ,color = "tab:pink",marker = "s")
+    plt.fill_between(np.array(plot_data["lcx_prob"]),np.array(plot_data["0.25_lcx_obj"]),np.array(plot_data["0.75_lcx_obj"]),alpha = 0.25, color = "tab:pink")
 
     # plt.scatter(df_nonrob["nonrob_prob"].mean(),df_nonrob["nonrob_obj"].mean(),color = "tab:pink",marker = "s")
     # plt.fill_between(np.array(dfs[idx]["mean_nonrob_prob"])[1:],np.array(dfs[idx]["0.25_nonrob_obj"])[1:],np.array(dfs[idx]["0.75_nonrob_obj"])[1:],alpha = 0.25,color = "tab:pink")
@@ -410,7 +452,7 @@ def plot_best_avg(plot_data,ylim=None):
 
     plt.plot(np.array(plot_data["scenario_prob"]),np.array(plot_data["test_avg_scene"]),label = "Scenario test",color = "tab:purple",marker = "o")
 
-    # plt.plot(np.array(plot_data["lcx_prob"]),np.array(plot_data["test_avg_lcx"]), label = "LCX test" ,color = "tab:pink",marker = "s")
+    plt.plot(np.array(plot_data["lcx_prob"]),np.array(plot_data["test_avg_lcx"]), label = "LCX test" ,color = "tab:pink",marker = "s")
 
     plt.legend(loc = "upper right")
     plt.xlabel("Probability of constraint violation")
@@ -436,7 +478,7 @@ def plot_best_in(plot_data,ylim=None):
 
     plt.plot(np.array(plot_data["scenario_prob"]),np.array(plot_data["test_in_scene"]),label = "Scenario test",color = "tab:purple",marker = "o")
 
-    # plt.plot(np.array(plot_data["lcx_prob"]),np.array(plot_data["test_avg_lcx"]), label = "LCX test" ,color = "tab:pink",marker = "s")
+    plt.plot(np.array(plot_data["lcx_prob"]),np.array(plot_data["test_in_lcx"]), label = "LCX test" ,color = "tab:pink",marker = "s")
 
     plt.legend(loc = "upper right")
     plt.xlabel("Probability of constraint violation")
@@ -458,10 +500,10 @@ def plot_best_cvar(plot_data,ylim=None):
 
     plt.plot(np.array(plot_data["pre_prob"]),np.array(plot_data["test_pre_cvar"]), label = "Pretrained test" ,color = "tab:green",marker = "v")
     
-    # plt.plot(np.array(plot_data["dro_prob"]),np.array(plot_data["test_in_dro"]), label = "DRO test" ,color = "tab:olive",marker = "v")
+    plt.plot(np.array(plot_data["dro_prob"]),np.array(plot_data["test_dro_cvar"]), label = "DRO test" ,color = "tab:olive",marker = "v")
 
     plt.plot(np.array(plot_data["scenario_prob"]),np.array(plot_data["test_scene_cvar"]),label = "Scenario test",color = "tab:purple",marker = "o")
-    # plt.plot(np.array(plot_data["lcx_prob"]),np.array(plot_data["test_avg_lcx"]), label = "LCX test" ,color = "tab:pink",marker = "s")
+    plt.plot(np.array(plot_data["lcx_prob"]),np.array(plot_data["test_lcx_cvar"]), label = "LCX test" ,color = "tab:pink",marker = "s")
 
     plt.legend(loc = "upper right")
     plt.xlabel("Probability of constraint violation")
