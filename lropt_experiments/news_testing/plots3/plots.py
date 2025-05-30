@@ -17,15 +17,15 @@ warnings.filterwarnings("ignore")
 plt.rcParams.update({
     "text.usetex":True,
     "font.size":18,
-    "font.family": "serif"
-})
+    "font.family": "serif"})
 path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/news_testing/plots3/"
 R = 10
 etas = [0.05,0.10,0.12,0.15,0.20,0.25]
 objs = [ 1,3,5,7,10]
 seeds1 = [0,1,2,3,4,5,6,7,8,9]
-foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/news_results/worst_new/bi/0.5/"
-foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/news_results/worst_new/bi/0.5/"
+foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/news_results/worst_fin/bi/1/"
+foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/news_results/worst_fin/bi/1/"
+foldername3= "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/news_results/worst_fin/dro/30/"
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
@@ -97,6 +97,26 @@ for q in quantiles:
     quantile_values = grouped[collist_grid].quantile(q).add_prefix(str(q)+"_")
     dfs_mv_grid = pd.concat([dfs_mv_grid, quantile_values], axis=1)
 dfs_mv_grid.to_csv(path+"pretrained.csv")
+df_dro = []
+running_ind = 0
+newfolder = foldername3+str(running_ind)
+for seed in range(R):
+    df_dro_temp = []
+    for context in range(20):
+        try:
+            df = pd.read_csv(newfolder+'/'+str(seed)+'_'+str(context)+"_dro_grid.csv")
+            df['seed'] = seeds1[seed]
+            df_dro_temp.append(df)
+        except:
+            print(3,seed)
+    df_dro_temp = pd.concat(df_dro_temp)
+    collist = list(df_dro_temp.columns)
+    collist.remove("Probability_violations_validate")
+    collist.remove('Probability_violations_test')
+    collist.remove("step")
+    grouped = df_dro_temp.groupby(["Rho"], as_index=False)
+    df_dro.append(grouped[collist].mean())
+df_dro = pd.concat(df_dro)
 
 df_nonrob = []
 running_ind = 0
@@ -169,9 +189,9 @@ for eta in etas:
 dfs_cat = pd.concat(dfs_cat)
 inds = {}
 #target_list = [0.01,0.05,0.1,0.15,0.20]
-target_list = [0, 0.01,0.025,0.04,0.05,0.09,0.1,0.12,0.14,0.15,0.18,0.20]
+target_list = [0, 0.01,0.025,0.04,0.05,0.08,0.09,0.095,0.1,0.12,0.14,0.15,0.18,0.20]
 dfs_best = {}
-dif=0.01
+dif=0.002
 curdif = dif
 for target in target_list:
     inds[target] = []
@@ -183,9 +203,9 @@ for target in target_list:
             if mindif >= dif:
                 curdif = mindif
                 print(curdif)
-            best_idx = np.argmin(dfs_cat[dfs_cat["seed"] == seed][abs(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)<=curdif]["valid_obj"])
+            best_idx = np.argmin(dfs_cat[dfs_cat["seed"] == seed][dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target<=curdif]["avg_val"])
             inds[target].append(best_idx)
-            cur_df = dfs_cat[dfs_cat["seed"] == seed][abs(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            cur_df = dfs_cat[dfs_cat["seed"] == seed][dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target<=curdif].iloc[best_idx:best_idx+1]
             dfs_best[target].append(cur_df)
             # best_idx = np.argmin(np.abs(np.array(dfs_cat[dfs_cat["seed"] == seed]["valid_prob"] - target)))
             # inds[target].append(best_idx)
@@ -204,8 +224,8 @@ for target in target_list:
             mindif = np.min(abs(df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target))
             if mindif >= dif:
                 curdif = mindif
-            best_idx = np.argmin(df_mv[df_mv["seed"] == seed][abs(df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target)<=curdif]["Validate_worst"])
-            cur_df = df_mv[df_mv["seed"] == seed][abs(df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            best_idx = np.argmin(df_mv[df_mv["seed"] == seed][df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target<=curdif]["Validate_val"])
+            cur_df = df_mv[df_mv["seed"] == seed][df_mv[df_mv["seed"] == seed]["Avg_prob_validate"] - target<=curdif].iloc[best_idx:best_idx+1]
             dfs_best_mv[target].append(cur_df)
         except:
             print("mv",seed)
@@ -219,23 +239,42 @@ for target in target_list:
             mindif = np.min(abs(df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target))
             if mindif >= dif:
                 curdif = mindif
-            best_idx = np.argmin(df_pre[df_pre["seed"] == seed][abs(df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target)<=curdif]["Validate_worst"])
-            cur_df = df_pre[df_pre["seed"] == seed][abs(df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target)<=curdif].iloc[best_idx:best_idx+1]
+            best_idx = np.argmin(df_pre[df_pre["seed"] == seed][df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target<=curdif]["Validate_val"])
+            cur_df = df_pre[df_pre["seed"] == seed][df_pre[df_pre["seed"] == seed]["Avg_prob_validate"] - target<=curdif].iloc[best_idx:best_idx+1]
             dfs_best_pre[target].append(cur_df)
         except:
             print("pre",seed)
     dfs_best_pre[target] = pd.concat(dfs_best_pre[target])  
 
+dfs_best_dro = {}
+for target in target_list:
+    dfs_best_dro[target] = []
+    for seed in seeds1:
+        try:
+            curdif = dif
+            mindif = np.min(abs(df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target))
+            if mindif >= dif:
+                curdif = mindif
+            best_idx = np.argmin(df_dro[df_dro["seed"] == seed][df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target<=curdif]["Validate_worst"])
+            cur_df = df_dro[df_dro["seed"] == seed][df_dro[df_dro["seed"] == seed]["Avg_prob_validate"] - target<=curdif].iloc[best_idx:best_idx+1]
+            dfs_best_dro[target].append(cur_df)
+        except:
+            print(seed)
+    dfs_best_dro[target] = pd.concat(dfs_best_dro[target])  
+
 plot_data = []
 for target in target_list:
     data = {'target':target,'test_prob': dfs_best[target]["test_prob"].mean(),'test_obj': dfs_best[target]["test_obj"].mean(),'0.25_test_obj': dfs_best[target]["test_obj"].quantile(0.25), '0.75_test_obj': dfs_best[target]["test_obj"].quantile(0.75),'mv_prob': dfs_best_mv[target]["Avg_prob_test"].mean(),'mv_obj':dfs_best_mv[target]["Test_worst"].mean(), '0.25_mv_obj':dfs_best_mv[target]["Test_worst"].quantile(0.25),  '0.75_mv_obj':dfs_best_mv[target]["Test_worst"].quantile(0.75),'pre_prob': dfs_best_pre[target]["Avg_prob_test"].mean(),'pre_obj':dfs_best_pre[target]["Test_worst"].mean(), '0.25_pre_obj':dfs_best_pre[target]["Test_worst"].quantile(0.25),  '0.75_pre_obj':dfs_best_pre[target]["Test_worst"].quantile(0.75),"nonrob_prob":df_nonrob["nonrob_prob"].mean(), "nonrob_obj": df_nonrob["nonrob_obj"].mean(), "scenario_prob":df_nonrob["scenario_probs"].mean(), "scenario_obj": df_nonrob["scenario_obj"].mean(),'0.25_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.25),  '0.75_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.75), '0.25_scenario_obj':df_nonrob["scenario_obj"].quantile(0.25),  '0.75_scenario_obj':df_nonrob["scenario_obj"].quantile(0.75),
-    "test_avg": dfs_best[target]["avg_val"].mean(), "test_avg_mv": dfs_best_mv[target]["Test_val"].mean(), "test_avg_pre": dfs_best_pre[target]["Test_val"].mean(), 
-            # "test_avg_dro": dfs_best_dro[target]["Test_other_obj"].mean(),
+    "test_avg": dfs_best[target]["avg_val"].mean(), "0.25_test_avg": dfs_best[target]["avg_val"].quantile(0.25),"0.75_test_avg": dfs_best[target]["avg_val"].quantile(0.75), "test_avg_mv": dfs_best_mv[target]["Test_val"].mean(), "0.25_test_avg_mv": dfs_best_mv[target]["Test_val"].quantile(0.25),"0.75_test_avg_mv": dfs_best_mv[target]["Test_val"].quantile(0.75),
+    "test_avg_pre": dfs_best_pre[target]["Test_val"].mean(), 
+    "0.25_test_avg_pre": dfs_best_pre[target]["Test_val"].quantile(0.25),"0.75_test_avg_pre": dfs_best_pre[target]["Test_val"].quantile(0.75),
+    'dro_prob': dfs_best_dro[target]["Avg_prob_test"].mean(),'dro_obj':dfs_best_dro[target]["Test_worst"].mean(), '0.25_dro_obj':dfs_best_dro[target]["Test_worst"].quantile(0.25),  '0.75_dro_obj':dfs_best_dro[target]["Test_worst"].quantile(0.75),
+            "test_avg_dro": dfs_best_dro[target]["Test_val"].mean(),
             "test_avg_scene":df_nonrob["scenario_avg"].mean(),
             "test_in":dfs_best[target]["test_in"].mean(),  "test_in_pre":dfs_best_pre[target]["Test_insample"].mean(), "test_in_mv":dfs_best_mv[target]["Test_insample"].mean(), "test_in_scene":df_nonrob["scenario_in"].mean(),
-            #   "test_in_dro": dfs_best_dro[target]["Test_obj"].mean(),
+              "test_in_dro": dfs_best_dro[target]["Test_insample"].mean(),
             "test_cvar": dfs_best[target]["test_cvar"].mean(), "test_cvar_mv": dfs_best_mv[target]["Test_cvar"].mean(), "test_cvar_pre": dfs_best_pre[target]["Test_cvar"].mean(), 
-            # "test_avg_dro": dfs_best_dro[target]["Test_other_obj"].mean(),
+            "test_cvar_dro": dfs_best_dro[target]["Test_cvar"].mean(),
             "test_cvar_scene":df_nonrob["scenario_cvar"].mean(),
             }
     data = pd.DataFrame(data, index=[0])
@@ -262,10 +301,12 @@ def plot_best(plot_data,dfs,dfs_grid,dfs_mv_grid,ylim=None):
     plt.plot(np.array(plot_data["pre_prob"]),np.array(plot_data["pre_obj"]), label = "Pretrained test" ,color = "tab:green",marker = "v")
     plt.fill_between(np.array(plot_data["pre_prob"]),np.array(plot_data["0.25_pre_obj"]),np.array(plot_data["0.75_pre_obj"]),alpha = 0.25, color = "tab:green")
 
+    plt.plot(np.array(plot_data["dro_prob"]),np.array(plot_data["dro_obj"]), label = "DRO test" ,color = "tab:olive",marker = "v")
+
     # plt.scatter(df_nonrob["nonrob_prob"].mean(),df_nonrob["nonrob_obj"].mean(),color = "tab:pink",marker = "s")
     # plt.fill_between(np.array(dfs[idx]["mean_nonrob_prob"])[1:],np.array(dfs[idx]["0.25_nonrob_obj"])[1:],np.array(dfs[idx]["0.75_nonrob_obj"])[1:],alpha = 0.25,color = "tab:pink")
     # plt.plot(df_nonrob["scenario_probs"].mean(),df_nonrob["scenario_obj"].mean(),label = "Scenario",color = "tab:purple",marker = "o")
-    # plt.fill_between(np.array(dfs[idx]["mean_scenario_probs"])[1:],np.array(dfs[idx]["0.25_scenario_obj"])[1:],np.array(dfs[idx]["0.75_scenario_obj"])[1:],alpha = 0.25,color = "tab:purple")
+    # plt.fill_between(np.array(dfs[idx]["scenario_probs"])[1:],np.array(dfs[idx]["0.25_scenario_obj"])[1:],np.array(dfs[idx]["0.75_scenario_obj"])[1:],alpha = 0.25,color = "tab:purple")
     plt.vlines(target_list,ymin = 0,ymax=2,linestyles=":",color = "red",alpha = 0.5)
 
     # plt.vlines([0.03,0.05,0.10],ymin = -6,ymax=-2,linestyles=":",color = "red",alpha = 1)
@@ -283,18 +324,20 @@ def plot_best_avg(plot_data,ylim=None):
     idx = 1
     plt.figure(figsize = (8,4))
     plt.plot(np.array(plot_data["mv_prob"]),np.array(plot_data["test_avg_mv"]), label = "MV test" ,color = "tab:blue",marker = "^")
+    plt.fill_between(np.array(plot_data["mv_prob"]),np.array(plot_data["0.25_test_avg_mv"]),np.array(plot_data["0.75_test_avg_mv"]),alpha = 0.25, color = "tab:blue")
     
     plt.plot(np.array(plot_data["test_prob"]),np.array(plot_data["test_avg"]), label = "Trained test" ,color = "tab:orange",marker = "D")
-
+    plt.fill_between(np.array(plot_data["test_prob"]),np.array(plot_data["0.25_test_avg"]),np.array(plot_data["0.75_test_avg"]),alpha = 0.25, color = "tab:orange")
+    
 
     plt.plot(np.array(plot_data["pre_prob"]),np.array(plot_data["test_avg_pre"]), label = "Pretrained test" ,color = "tab:green",marker = "v")
+    plt.fill_between(np.array(plot_data["pre_prob"]),np.array(plot_data["0.25_test_avg_pre"]),np.array(plot_data["0.75_test_avg_pre"]),alpha = 0.25, color = "tab:green")
     
-    # plt.plot(np.array(plot_data["dro_prob"]),np.array(plot_data["test_avg_dro"]), label = "DRO test" ,color = "tab:olive",marker = "v")
+    plt.plot(np.array(plot_data["dro_prob"]),np.array(plot_data["test_avg_dro"]), label = "DRO test" ,color = "tab:olive",marker = "v")
+    # plt.fill_between(np.array(plot_data["dro_prob"]),np.array(plot_data["0.25_test_avg_dro"]),np.array(plot_data["0.75_test_avg_dro"]),alpha = 0.25, color = "tab:olive")
 
     # plt.plot(np.array(plot_data["scenario_prob"]),np.array(plot_data["test_avg_scene"]),label = "Scenario test",color = "tab:purple",marker = "o")
-
-    # plt.plot(np.array(plot_data["lcx_prob"]),np.array(plot_data["test_avg_lcx"]), label = "LCX test" ,color = "tab:pink",marker = "s")
-
+    # plt.fill_between(np.array(plot_data["scenario_prob"]),np.array(plot_data["0.25_test_avg_scene"]),np.array(plot_data["0.75_test_avg_scene"]),alpha = 0.25, color = "tab:purple")
     plt.legend(loc = "upper right")
     plt.xlabel("Probability of constraint violation")
     # plt.ylabel("Out-of-sample objective")
@@ -313,7 +356,7 @@ def plot_best_in(plot_data,ylim=None):
 
     plt.plot(np.array(plot_data["pre_prob"]),np.array(plot_data["test_in_pre"]), label = "Pretrained test" ,color = "tab:green",marker = "v")
     
-    # plt.plot(np.array(plot_data["dro_prob"]),np.array(plot_data["test_in_dro"]), label = "DRO test" ,color = "tab:olive",marker = "v")
+    plt.plot(np.array(plot_data["dro_prob"]),np.array(plot_data["test_in_dro"]), label = "DRO test" ,color = "tab:olive",marker = "v")
 
     # plt.plot(np.array(plot_data["scenario_prob"]),np.array(plot_data["test_in_scene"]),label = "Scenario test",color = "tab:purple",marker = "o")
 
@@ -337,7 +380,7 @@ def plot_best_cvar(plot_data,ylim=None):
 
     plt.plot(np.array(plot_data["pre_prob"]),np.array(plot_data["test_cvar_pre"]), label = "Pretrained test" ,color = "tab:green",marker = "v")
     
-    # plt.plot(np.array(plot_data["dro_prob"]),np.array(plot_data["test_in_dro"]), label = "DRO test" ,color = "tab:olive",marker = "v")
+    plt.plot(np.array(plot_data["dro_prob"]),np.array(plot_data["test_cvar_dro"]), label = "DRO test" ,color = "tab:olive",marker = "v")
 
     # plt.plot(np.array(plot_data["scenario_prob"]),np.array(plot_data["test_cvar_scene"]),label = "Scenario test",color = "tab:purple",marker = "o")
 
