@@ -66,7 +66,7 @@ def calc_eval(u,r,y,Y,t,h,d,s,L):
         vio += (sum >= 0.0001)
     return val/u.shape[0], vio/u.shape[0]
 
-def inv_exp(cfg,hydra_out_dir,seed,idxx):
+def inv_exp(cfg,hydra_out_dir,seed):
     finseed = initseed + 10*seed
     print(finseed)
     data_gen = False
@@ -148,7 +148,7 @@ def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     njobs = get_n_processes(30)
     Parallel(n_jobs=njobs)(
-        delayed(inv_exp)(cfg,hydra_out_dir,r,cfg.idx) for r in range(R))
+        delayed(inv_exp)(cfg,hydra_out_dir,r) for r in range(R))
     
 
 if __name__ == "__main__":

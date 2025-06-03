@@ -2,7 +2,7 @@
 #   - override hydra/launcher: joblib
 hydra:
   sweep:
-    dir: multirun/port_pred_bi_1/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: results/port/30_1000
     subdir: ${hydra.job.num}
   job:
     chdir: True
@@ -10,7 +10,7 @@ hydra:
   sweeper:
     params:
       eta: 0.05,0.08,0.10,0.12,0.15,0.2
-      avg_scale: 1,1.5,2.5,3,5,8
+      obj_scale: 1,1.5,2.5,3,5,8
 eta: 0.15
 obj_scale: 1
 seed: 0
@@ -27,7 +27,7 @@ lr_step_size: 50
 lr_gamma: 0.7
 random_init: False
 parallel: False
-kappa: 0
+kappa: -0.01
 contextual: True
 max_iter_line_search: 100
 line_search: True
@@ -37,21 +37,9 @@ validate_percentage: 0.2
 test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
-Nval: 1000
-nval: 10
 Rval: 10
 seedvals: 0
 knnnum: .1
-epslim: 0.50360
-epslimtrain: 0.510120
-addval: 0
-Fmults: 0.2
 knn_mult: 0.95
-deep: False
-cov: False
-expected: True
 target_eta: 0.1
-knn_mult_train: 0
-cvar_obj_only: True
-cov_pred: True
-avg_scale: 1
+avg_scale: 0.5

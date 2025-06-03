@@ -1,21 +1,13 @@
-import argparse
 import os
 import sys
 import joblib
 from joblib import Parallel, delayed
 output_stream = sys.stdout
 import cvxpy as cp
-import scipy as sc
 import numpy as np
-import numpy.random as npr
-import torch
-from sklearn import datasets
 import pandas as pd
 import lropt
 import hydra
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from mpl_toolkits.axes_grid1.inset_locator import mark_inset, zoomed_inset_axes
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -62,7 +54,7 @@ def gen_demand_varied(sig,mu,orig_mu,N,seed=399):
     pointlist = []
     np.random.seed(seed)
     for i in range(N):
-        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0*np.eye(orig_mu.shape[0]))
+        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i])
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
@@ -84,8 +76,6 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         try: 
             data = gen_demand_varied(sig,mu,orig_mu,N,seed=finseed)
             train = data[train_indices]
-            init = sc.linalg.sqrtm(np.cov(train.T))
-            init_bval = np.mean(train, axis=0)
         except Exception as e:
             finseed += 1
         else: 
@@ -140,23 +130,13 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
 @hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/port_parallel/configs",config_name = "port.yaml", version_base = None)
 def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
-    # print(f"Current working directory: {os.getcwd()}")
     njobs = get_n_processes(30)
     Parallel(n_jobs=njobs)(
         delayed(portfolio_exp)(cfg,hydra_out_dir,r) for r in range(R))
-    # for r in range(R):
-    #     portfolio_exp(cfg,hydra_out_dir,r)
     
 
 if __name__ == "__main__":
     idx = int(os.environ["SLURM_ARRAY_TASK_ID"])
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('--foldername', type=str,
-    #                     default="portfolio/", metavar='N')
-    # parser.add_argument('--seed', type=int, default=0)
-    # parser.add_argument('--R', type=int, default=2)
-    # parser.add_argument('--n', type=int, default=15)
-    # arguments = parser.parse_args()
     seed_list = [0]
     n_list = [10,20,30]
     R = 10
@@ -165,7 +145,6 @@ if __name__ == "__main__":
     N = 2000
     num_context = 20
     test_p = 0.5
-    # sig, mu = gen_sigmu(n,1)
     num_reps = int(N/num_context)
     sig, mu, context, orig_mu = gen_sigmu_varied(n,num_context,seed= 0)
     sig = np.vstack([sig]*num_reps)

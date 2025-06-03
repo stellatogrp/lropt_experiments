@@ -1,4 +1,3 @@
-import argparse
 import os
 import sys
 import joblib
@@ -7,17 +6,9 @@ output_stream = sys.stdout
 import cvxpy as cp
 import scipy as sc
 import numpy as np
-import numpy.random as npr
-import torch
-from sklearn import datasets
 import pandas as pd
 import lropt
 import hydra
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from mpl_toolkits.axes_grid1.inset_locator import mark_inset, zoomed_inset_axes
-import warnings
-warnings.filterwarnings("ignore")
 
 def get_n_processes(max_n=np.inf):
     """Get number of processes from current cps number
@@ -62,7 +53,7 @@ def gen_demand_varied(sig,mu,orig_mu,N,seed=399):
     pointlist = []
     np.random.seed(seed)
     for i in range(N):
-        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i]+0.1*np.eye(orig_mu.shape[0]))
+        d_train = np.random.multivariate_normal(0.7*orig_mu+ 0.3*mu[i],sig[i])
         pointlist.append(d_train)
     return np.vstack(pointlist)
 
@@ -139,18 +130,13 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
     settings.validate_frequency = cfg.validate_frequency
     settings.initialize_predictor = cfg.initialize_predictor
     settings.num_iter = cfg.num_iter
-    settings.cov_gam = cfg.gam_scale
+    settings.coverage_gamma = cfg.gam_scale
     settings.predictor = lropt.DeepNormalModel()
     settings.data = data
-    settings.cost_func = False
-    settings.cvar_obj = True
+    settings.constrain_cvar = False
     settings.target_eta = cfg.target_eta
     try: 
         result = trainer.train(settings=settings)
-        df = result.df
-        A_fin = result.A
-        b_fin = result.b
-        torch.save(result._predictor.state_dict(),hydra_out_dir+'/'+str(seed)+'_trained_linear.pth')
         print("Training complete")
     except:
         print("training failed")
@@ -175,32 +161,21 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
 @hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/port_parallel/configs",config_name = "port_delage.yaml", version_base = None)
 def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
-    # print(f"Current working directory: {os.getcwd()}")
     njobs = get_n_processes(30)
     Parallel(n_jobs=njobs)(
         delayed(portfolio_exp)(cfg,hydra_out_dir,r) for r in range(R))
-    # for r in range(R):
-    #     portfolio_exp(cfg,hydra_out_dir,r)
     
 
 if __name__ == "__main__":
     idx = int(os.environ["SLURM_ARRAY_TASK_ID"])
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('--foldername', type=str,
-    #                     default="portfolio/", metavar='N')
-    # parser.add_argument('--seed', type=int, default=0)
-    # parser.add_argument('--R', type=int, default=2)
-    # parser.add_argument('--n', type=int, default=15)
-    # arguments = parser.parse_args()
     seed_list = [0,0,0]
     n_list = [10,20,30]
     R = 10
     initseed = seed_list[idx]
     n = n_list[idx]
-    N = 1000
+    N = 2000
     num_context = 20
     test_p = 0.5
-    # sig, mu = gen_sigmu(n,1)
     num_reps = int(N/num_context)
     sig, mu, context, orig_mu = gen_sigmu_varied(n,num_context,seed= 0)
     sig = np.vstack([sig]*num_reps)
@@ -217,6 +192,5 @@ if __name__ == "__main__":
       context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
       test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
     eps_list= np.array([1])
-    # np.concat([np.logspace(-4,-1,20),np.linspace(0.11,1.5,20)])
     main_func()
 
