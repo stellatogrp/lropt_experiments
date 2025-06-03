@@ -28,7 +28,7 @@ foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/in
 foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/worst_new/cvar/1.5/"
 foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/worst_new/dro_sep/30/"
 foldername7 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/worst/dro/30/"
-# foldername6 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/cvar/lcx/30_1000/"
+
 dfs_all = {}
 quantiles = [0.25,0.75]
 dfs = {}
