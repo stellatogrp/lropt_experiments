@@ -1,2 +1,0 @@
-context_val,seed,alpha,eps,test_lcx_prob,test_lcx_obj,valid_lcx_prob,valid_lcx_obj,time,in_val,test_avg,valid_avg
-9,20,0.12,0.08,0.0,-0.31504201683930844,0.0,-0.25643018505195286,1523.7942526340485,0.3713172640520525,-0.723780378054129,-0.8057895138431541

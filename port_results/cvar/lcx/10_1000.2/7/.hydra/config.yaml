@@ -1,6 +1,0 @@
-alpha: 0.12
-eps: 0.1
-nval: 30
-Nval: 1000
-sepcontext: true
-maxouteriter: 30
