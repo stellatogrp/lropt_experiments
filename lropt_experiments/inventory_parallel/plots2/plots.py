@@ -27,6 +27,7 @@ seeds1 = [0,10,20,30,40,50,60,70,80,90]
 foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/worst_new/cvar/1.5/"
 foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/worst_new/cvar/1.5/"
 foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/worst_new/dro_sep/30/"
+foldername7 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/worst/dro/30/"
 # foldername6 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/cvar/lcx/30_1000/"
 dfs_all = {}
 quantiles = [0.25,0.75]
@@ -99,17 +100,17 @@ for q in quantiles:
     quantile_values = grouped[collist_grid].quantile(q).add_prefix(str(q)+"_")
     dfs_mv_grid = pd.concat([dfs_mv_grid, quantile_values], axis=1)
 dfs_mv_grid.to_csv(path+"pretrained.csv")
-# df_dro = []
-# running_ind = 0
-# newfolder = foldername3+str(running_ind)
-# for seed in range(R):
-#     try:
-#         df = pd.read_csv(newfolder+'/'+str(seed)+"_dro_grid.csv")
-#         df['seed'] = seeds1[seed]
-#         df_dro.append(df)
-#     except:
-#         print(3,eta,obj,seed)
-# df_dro = pd.concat(df_dro)
+df_dro1 = []
+running_ind = 0
+newfolder = foldername7+str(running_ind)
+for seed in range(R):
+    try:
+        df = pd.read_csv(newfolder+'/'+str(seed)+"_dro_grid.csv")
+        df['seed'] = seeds1[seed]
+        df_dro1.append(df)
+    except:
+        print(3,seed)
+df_dro1 = pd.concat(df_dro1)
 df_dro = []
 running_ind = 0
 newfolder = foldername3+str(running_ind)
@@ -292,6 +293,22 @@ for target in target_list:
             print(seed)
     dfs_best_dro[target] = pd.concat(dfs_best_dro[target])  
 
+dfs_best_dro1 = {}
+for target in target_list:
+    dfs_best_dro1[target] = []
+    for seed in seeds1:
+        try:
+            curdif = dif
+            mindif = np.min(abs(df_dro1[df_dro1["seed"] == seed]["Avg_prob_validate"] - target))
+            if mindif >= dif:
+                curdif = mindif
+            best_idx = np.argmin(df_dro1[df_dro1["seed"] == seed][df_dro1[df_dro1["seed"] == seed]["Avg_prob_validate"] - target<=curdif]["Validate_worst"])
+            cur_df = df_dro1[df_dro1["seed"] == seed][df_dro1[df_dro1["seed"] == seed]["Avg_prob_validate"] - target<=curdif].iloc[best_idx:best_idx+1]
+            dfs_best_dro1[target].append(cur_df)
+        except:
+            print(seed)
+    dfs_best_dro1[target] = pd.concat(dfs_best_dro1[target])  
+
 dfs_best_lcx = {}
 # for target in target_list:
 #     dfs_best_lcx [target] = []
@@ -309,7 +326,8 @@ dfs_best_lcx = {}
 #     dfs_best_lcx[target] = pd.concat(dfs_best_lcx[target])  
 plot_data = []
 for target in target_list:
-    data = {'target':target,'test_prob': dfs_best[target]["test_prob"].mean(),'test_obj': dfs_best[target]["test_obj"].mean(),'0.25_test_obj': dfs_best[target]["test_obj"].quantile(0.25), '0.75_test_obj': dfs_best[target]["test_obj"].quantile(0.75),'mv_prob': dfs_best_mv[target]["Avg_prob_test"].mean(),'mv_obj':dfs_best_mv[target]["Test_worst"].mean(), '0.25_mv_obj':dfs_best_mv[target]["Test_worst"].quantile(0.25),  '0.75_mv_obj':dfs_best_mv[target]["Test_worst"].quantile(0.75),'pre_prob': dfs_best_pre[target]["Avg_prob_test"].mean(),'pre_obj':dfs_best_pre[target]["Test_worst"].mean(), '0.25_pre_obj':dfs_best_pre[target]["Test_worst"].quantile(0.25),  '0.75_pre_obj':dfs_best_pre[target]["Test_worst"].quantile(0.75),'dro_prob': dfs_best_dro[target]["Avg_prob_test"].mean(),'dro_obj':dfs_best_dro[target]["Test_worst"].mean(), '0.25_dro_obj':dfs_best_dro[target]["Test_worst"].quantile(0.25),  '0.75_dro_obj':dfs_best_dro[target]["Test_worst"].quantile(0.75),"nonrob_prob":df_nonrob["nonrob_prob"].mean(), "nonrob_obj": df_nonrob["nonrob_obj"].mean(), "scenario_prob":df_nonrob["scenario_probs"].mean(), "scenario_obj": df_nonrob["scenario_obj"].mean(),'0.25_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.25),  '0.75_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.75), '0.25_scenario_obj':df_nonrob["scenario_obj"].quantile(0.25),  '0.75_scenario_obj':df_nonrob["scenario_obj"].quantile(0.75),
+    data = {'target':target,'test_prob': dfs_best[target]["test_prob"].mean(),'test_obj': dfs_best[target]["test_obj"].mean(),'0.25_test_obj': dfs_best[target]["test_obj"].quantile(0.25), '0.75_test_obj': dfs_best[target]["test_obj"].quantile(0.75),'mv_prob': dfs_best_mv[target]["Avg_prob_test"].mean(),'mv_obj':dfs_best_mv[target]["Test_worst"].mean(), '0.25_mv_obj':dfs_best_mv[target]["Test_worst"].quantile(0.25),  '0.75_mv_obj':dfs_best_mv[target]["Test_worst"].quantile(0.75),'pre_prob': dfs_best_pre[target]["Avg_prob_test"].mean(),'pre_obj':dfs_best_pre[target]["Test_worst"].mean(), '0.25_pre_obj':dfs_best_pre[target]["Test_worst"].quantile(0.25),  '0.75_pre_obj':dfs_best_pre[target]["Test_worst"].quantile(0.75),'dro_prob': dfs_best_dro[target]["Avg_prob_test"].mean(),'dro_obj':dfs_best_dro[target]["Test_worst"].mean(), '0.25_dro_obj':dfs_best_dro[target]["Test_worst"].quantile(0.25),  '0.75_dro_obj':dfs_best_dro[target]["Test_worst"].quantile(0.75),
+            'dro_prob1': dfs_best_dro1[target]["Avg_prob_test"].mean(),'dro_obj1':dfs_best_dro1[target]["Test_worst"].mean(), '0.25_dro_obj1':dfs_best_dro1[target]["Test_worst"].quantile(0.25),  '0.75_dro_obj1':dfs_best_dro1[target]["Test_worst"].quantile(0.75), "nonrob_prob":df_nonrob["nonrob_prob"].mean(), "nonrob_obj": df_nonrob["nonrob_obj"].mean(), "scenario_prob":df_nonrob["scenario_probs"].mean(), "scenario_obj": df_nonrob["scenario_obj"].mean(),'0.25_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.25),  '0.75_nonrob_obj':df_nonrob["nonrob_obj"].quantile(0.75), '0.25_scenario_obj':df_nonrob["scenario_obj"].quantile(0.25),  '0.75_scenario_obj':df_nonrob["scenario_obj"].quantile(0.75),
             # 'lcx_prob': dfs_best_lcx[target]["test_lcx_prob"].mean(),'lcx_obj':dfs_best_lcx[target]["test_lcx_obj"].mean(), '0.25_lcx_obj':dfs_best_lcx[target]["test_lcx_obj"].quantile(0.25),  '0.75_lcx_obj':dfs_best_lcx[target]["test_lcx_obj"].quantile(0.75),
     "test_avg": dfs_best[target]["avg_val"].mean(), "0.25_test_avg": dfs_best[target]["avg_val"].quantile(0.25),"0.75_test_avg": dfs_best[target]["avg_val"].quantile(0.75), "test_avg_mv": dfs_best_mv[target]["Test_val"].mean(), "0.25_test_avg_mv": dfs_best_mv[target]["Test_val"].quantile(0.25),"0.75_test_avg_mv": dfs_best_mv[target]["Test_val"].quantile(0.75),
     "test_avg_pre": dfs_best_pre[target]["Test_val"].mean(), 
@@ -317,6 +335,8 @@ for target in target_list:
             # "test_avg_lcx": dfs_best_lcx[target]["test_avg"].mean(),
             "test_avg_dro": dfs_best_dro[target]["Test_val"].mean(),
             "0.25_test_avg_dro": dfs_best_dro[target]["Test_val"].quantile(0.25),"0.75_test_avg_dro": dfs_best_dro[target]["Test_val"].quantile(0.75),
+            "test_avg_dro1": dfs_best_dro1[target]["Test_val"].mean(),
+            "0.25_test_avg_dro1": dfs_best_dro1[target]["Test_val"].quantile(0.25),"0.75_test_avg_dro1": dfs_best_dro1[target]["Test_val"].quantile(0.75),
             "test_avg_scene":df_nonrob["scenario_avg"].mean(),
             "0.25_test_avg_scene":df_nonrob["scenario_avg"].quantile(0.25),
             "0.75_test_avg_scene":df_nonrob["scenario_avg"].quantile(0.75),
@@ -325,7 +345,7 @@ for target in target_list:
             'test_mv_cvar':dfs_best_mv[target]["Test_cvar"].mean(), '0.25_mv_cvar':dfs_best_mv[target]["Test_cvar"].quantile(0.25),  '0.75_mv_cvar':dfs_best_mv[target]["Test_cvar"].quantile(0.75),
             'test_pre_cvar':dfs_best_pre[target]["Test_cvar"].mean(),  
             '0.25_pre_cvar':dfs_best_pre[target]["Test_cvar"].quantile(0.25),  '0.75_pre_cvar':dfs_best_pre[target]["Test_cvar"].quantile(0.75),'test_dro_cvar':dfs_best_dro[target]["Test_cvar"].mean(), '0.25_dro_cvar':dfs_best_dro[target]["Test_cvar"].quantile(0.25),  '0.75_dro_cvar':dfs_best_dro[target]["Test_cvar"].quantile(0.75),
-            "test_scene_cvar":df_nonrob["scenario_cvar"].mean(),
+            "test_scene_cvar":df_nonrob["scenario_cvar"].mean(),'test_dro_cvar1':dfs_best_dro1[target]["Test_cvar"].mean(), '0.25_dro_cvar1':dfs_best_dro1[target]["Test_cvar"].quantile(0.25),  '0.75_dro_cvar1':dfs_best_dro1[target]["Test_cvar"].quantile(0.75),
             }
     data = pd.DataFrame(data, index=[0])
     plot_data.append(data)
