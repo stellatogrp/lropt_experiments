@@ -9,8 +9,8 @@ description = "Experiments using lropt for optimization under uncertainty."
 readme = "README.md"
 requires-python = ">=3.12"
 authors = [
-    { name = "Irina Wang", email = "iywang@princeton.edu" }, 
-    { name = "Bartolomeo Stellato", email = "bstellato@princeton.edu" }, 
+    { name = "Irina Wang" }, 
+    { name = "Bartolomeo Stellato"}, 
 ]
 dependencies = [
     "numpy",
