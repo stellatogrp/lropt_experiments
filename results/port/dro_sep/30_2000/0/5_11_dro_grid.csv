@@ -1,2 +1,0 @@
-,Rho,Test_worst,Test_insample,Test_val,Test_cvar,Lower_test,Upper_test,Probability_violations_test,Violations_test,Coverage_test,Avg_prob_test,step,Validate_worst,Validate_insample,Validate_cvar,Validate_val,Probability_violations_validate,Violations_validate,Avg_prob_validate
-0,0.5,-0.7196387935251012,-0.748193454091192,-0.9121911778815844,-0.510695396829917,-1.0626052225840872,-0.7906885434746933,[0.12],0.4106300153459174,0.0,0.12,"(0,)",-0.7196387935251012,-0.7481934540911109,-0.5879000715053389,-0.8587570237803046,[0.2],0.4907027200592782,0.2

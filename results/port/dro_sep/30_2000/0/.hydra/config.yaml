@@ -1,7 +1,0 @@
-eta: 0.15
-seed: 0
-test_percentage: 0.5
-validate_percentage: 0.2
-Rval: 10
-n_val: 30
-N_val: 2000
