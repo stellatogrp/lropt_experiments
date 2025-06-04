@@ -40,7 +40,7 @@ python newsvendor/gen_csv.py
 
 Portfolio Optimization
 
-For each of the following settings: $(m=30,N=2000)$, $(m=30,N=1000)$, $(m=10,N=2000)$, $(m=10,N=1000)$, run the following with the corresponding values of $m$ and $N$. We show an example for $m=30,N=2000$.
+For each of the following settings: $(n=30,N=2000)$, $(n=30,N=1000)$, $(n=10,N=2000)$, $(n=10,N=1000)$, run the following with the corresponding values of $n$ and $N$. We show an example for $n=30,N=2000$.
 
 ```
 python portfolio/port.py --config-name=port_30_2000.yaml
@@ -48,7 +48,7 @@ python portfolio/port_ecro.py --config-name=port_ecro_30_2000.yaml
 python portfolio/port_dro.py --config-name=port_dro_30_2000.yaml
 python portfolio/port_dro_sep.py --config-name=port_dro_sep_30_2000.yaml
 python portfolio/port_LCX_sep.py --config-name=lcx_30_2000.yaml
-python gen_csv.py --m 30 --N 2000
+python gen_csv.py --n 30 --N 2000
 
 ```
 Inventory Problem
