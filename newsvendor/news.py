@@ -260,7 +260,6 @@ def news_exp(cfg,hydra_out_dir,seed):
         None
 
     if cfg.eta == 0.05 and cfg.obj_scale == 1:
-        # Grid search epsilon
         # mean variance set
         settings.contextual = False
         result_grid = trainer.grid(rholst=eps_list,settings=settings)
@@ -268,7 +267,7 @@ def news_exp(cfg,hydra_out_dir,seed):
         dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
         dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'mean_var_grid.csv')
 
-@hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/news_testing/configs",config_name = "news.yaml", version_base = None)
+@hydra.main(config_path="configs",config_name = "news.yaml", version_base = None)
 def main_func(cfg: DictConfig):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     print(f"Current working directory: {os.getcwd()}")

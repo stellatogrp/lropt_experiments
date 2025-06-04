@@ -2,9 +2,9 @@
 #   - override hydra/launcher: joblib
 hydra:
   sweep:
-    dir: results/inv_dro_sep/0
+    dir: results/inv/dro_sep
   job:
-    chdir: False
+    chdir: True
   mode: MULTIRUN
   sweeper:
     params:

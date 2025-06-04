@@ -296,7 +296,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
     except:
         return None
 
-@hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/inventory_parallel/configs",config_name = "inv.yaml", version_base = None)
+@hydra.main(config_path="configs",config_name = "inv.yaml", version_base = None)
 def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     njobs = get_n_processes(30)

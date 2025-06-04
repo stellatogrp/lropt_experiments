@@ -30,6 +30,7 @@ dev = [
     "ruff-lsp",
     "ipython",
     "ipdb",
+    "argparse"
 ]
 
 [tool.ruff]

@@ -6,11 +6,9 @@ output_stream = sys.stdout
 import cvxpy as cp
 import scipy as sc
 import numpy as np
-import torch
 import pandas as pd
 import lropt
 import hydra
-import warnings
 
 def get_n_processes(max_n=np.inf):
     """Get number of processes from current cps number
@@ -75,7 +73,7 @@ def calc_eval(x,t,u,eta):
     return -cvar_loss, vio/u.shape[0], val/u.shape[0], -quantile_value
 
 
-def portfolio_exp(cfg,hydra_out_dir,seed):
+def portfolio_exp(cfg,hydra_out_dir,seed,initseed, sig,mu,orig_mu,N,n,train_indices,context,eps_list,num_context,context_inds,test_inds):
     finseed = initseed + 10*seed
     print(finseed)
     data_gen = False
@@ -259,24 +257,14 @@ def portfolio_exp(cfg,hydra_out_dir,seed):
         dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_pretrained_grid.csv')
 
 
-@hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/port_parallel/configs",config_name = "port.yaml", version_base = None)
+@hydra.main(config_path="configs",config_name = "port_30_2000.yaml", version_base = None)
 def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     njobs = get_n_processes(30)
-    Parallel(n_jobs=njobs)(
-        delayed(portfolio_exp)(cfg,hydra_out_dir,r) for r in range(R))
-    
-
-if __name__ == "__main__":
-    try:
-        idx = int(os.environ["SLURM_ARRAY_TASK_ID"])
-    except:
-        idx = 0
-    n_list = [10,30]
     R = 10
     initseed = 0
-    n = n_list[idx]
-    N = 1000
+    n = cfg.n_val
+    N = cfg.N_val
     num_context = 20
     test_p = 0.5
     num_reps = int(N/num_context)
@@ -293,6 +281,11 @@ if __name__ == "__main__":
     for j in range(num_context):
       context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
       test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
-    eps_list= np.concat([np.logspace(-4,-1,15),np.linspace(0.11,1,20),np.linspace(1.1,3.5,30)])
+    eps_list= np.concat([np.logspace(-4,-1,15),np.linspace(0.11,1,20),np.linspace(1.1,3.5,25)])
+    Parallel(n_jobs=njobs)(
+        delayed(portfolio_exp)(cfg,hydra_out_dir,r,initseed, sig,mu,orig_mu,N,n,train_indices,context,eps_list,num_context,context_inds,test_inds) for r in range(R))
+    
+
+if __name__ == "__main__":
     main_func()
 

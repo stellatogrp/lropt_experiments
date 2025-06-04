@@ -1,19 +1,12 @@
 import numpy as np
 import pandas as pd
-import sys
-import os
-sys.path.append('..')
-path = "news_intro/"
-
-if not os.path.exists(path):
-    os.makedirs(path)
+path = "newsvendor/"
 
 R = 10
 etas = [0.05,0.10,0.12,0.15,0.20,0.25]
 objs = [1,3,5,7,10]
 seeds1 = [0,1,2,3,4,5,6,7,8,9]
-foldername1 = "results/news/"
-foldername2 = "results/news/"
+foldername1 = "./results/news/"
 quantiles = [0.25,0.75]
 df_pre = []
 running_ind = 0
@@ -70,7 +63,7 @@ dfs_cat = []
 running_ind = 0
 for eta in etas:
     for obj in objs:
-        newfolder = foldername2+str(running_ind)
+        newfolder = foldername1+str(running_ind)
         for seed in range(R):
             try:
                 df = pd.read_csv(newfolder+'/'+str(seed)+"_vals.csv")

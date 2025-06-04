@@ -158,7 +158,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed,initseed, sig,mu,orig_mu,N,n,train_indi
     except:
         None
 
-@hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/port_parallel/configs",config_name = "port_delage1.yaml", version_base = None)
+@hydra.main(config_path="configs",config_name = "port_ecro_30_2000.yaml", version_base = None)
 def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     njobs = get_n_processes(30)

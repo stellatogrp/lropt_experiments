@@ -125,15 +125,14 @@ def inv_exp(cfg,hydra_out_dir,seed):
     except:
         print("grid failed")
 
-@hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/inventory_parallel/configs",config_name = "inv_dro.yaml", version_base = None)
+@hydra.main(config_path="configs",config_name = "inv_dro.yaml", version_base = None)
 def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     njobs = get_n_processes(30)
     Parallel(n_jobs=njobs)(
-        delayed(inv_exp)(cfg,hydra_out_dir,r,idx) for r in range(R))
+        delayed(inv_exp)(cfg,hydra_out_dir,r) for r in range(R))
 
   
-
 if __name__ == "__main__":
     R = 10
     initseed = 0

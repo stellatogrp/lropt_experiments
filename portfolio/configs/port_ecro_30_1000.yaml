@@ -2,7 +2,7 @@
 #   - override hydra/launcher: joblib
 hydra:
   sweep:
-    dir: results/port/delage/30_1000
+    dir: results/port/ecro/30_1000
     subdir: ${hydra.job.num}
   job:
     chdir: True

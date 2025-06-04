@@ -200,7 +200,7 @@ def min_max(eps,alpha,data,datamax,test,validate,seed,hydra_out_dir,n,N_train,co
         single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+str(context_val)+'_'+"vals_lcx.csv",index=False)
     return eval, prob_vio, eval_vali, prob_vali, t.value, test_avg, vali_avg,outeriter, quanttest, quantvali
 
-def lcx_exp(cfg,hydra_out_dir,seed,initseed,sig,mu,orig_mu,n,N_train,context_val,context_inds,valid_inds,test_inds):
+def lcx_exp(cfg,hydra_out_dir,seed,initseed,sig,mu,orig_mu,n,N,N_train,context_val,context_inds,valid_inds,test_inds):
     seed = initseed + 10*seed
     print(seed)
     start_time = time.time()
@@ -220,7 +220,7 @@ def lcx_exp(cfg,hydra_out_dir,seed,initseed,sig,mu,orig_mu,n,N_train,context_val
         print("Training failed")
     
 
-@hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/LCX/configs",config_name = "lcx_30_2000.yaml", version_base = None)
+@hydra.main(config_path="configs",config_name = "lcx_30_2000.yaml", version_base = None)
 def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     print(f"Current working directory: {os.getcwd()}")
@@ -253,9 +253,8 @@ def main_func(cfg):
         test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
         valid_inds[j]= [i for i in valid_indices if j*num_reps <= i <= (j+1)*num_reps]
     N_train = len(context_inds[context_val])
-
     Parallel(n_jobs=njobs)(
-        delayed(lcx_exp)(cfg,hydra_out_dir,r,initseed,sig,mu,orig_mu,n,N_train,context_val,context_inds,valid_inds,test_inds) for r in range(R))
+        delayed(lcx_exp)(cfg,hydra_out_dir,r,initseed,sig,mu,orig_mu,n,N,N_train,context_val,context_inds,valid_inds,test_inds) for r in range(R))
     
      
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 #   - override hydra/launcher: joblib
 hydra:
   sweep:
-    dir: results/port/delage/10_1000
+    dir: results/port/ecro/10_2000
     subdir: ${hydra.job.num}
   job:
     chdir: True
@@ -38,7 +38,7 @@ validate_percentage: 0.2
 test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
-N_val: 1000
+N_val: 2000
 n_val: 10
 Rval: 10
 seedvals: 0

@@ -2,13 +2,15 @@
 #   - override hydra/launcher: joblib
 hydra:
   sweep:
-    dir: results/port/lcx/30_1000/0
+    dir: results/port/lcx/30_1000
+    subdir: 0
   job:
     chdir: False
   mode: MULTIRUN
   sweeper:
     params:
       idx: 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
+idx: 0
 alpha: 0.10
 eps: 0.10
 n_val: 30

@@ -9,8 +9,8 @@ hydra:
   mode: MULTIRUN
   sweeper:
     params:
-      eta: 0.15
-eta: 0.01
+      eta: 0.1
+eta: 0.1
 seed: 0
 test_percentage: 0.5
 validate_percentage: 0.2

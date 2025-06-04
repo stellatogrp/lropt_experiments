@@ -14,66 +14,47 @@ If you find this repository helpful in your publications,
 please consider citing our paper and package.
 
 ## Introduction
-We propose a data-driven technique to automatically learn the uncertainty sets in robust optimization.
-Our method reshapes the uncertainty sets by minimizing the expected performance across a family of problems subject to guaranteeing constraint satisfaction. 
-Our approach is very flexible and can learn a wide variety of uncertainty sets while preserving tractability.
+We propose a data-driven technique to automatically learn contextual uncertainty sets in robust optimization, optimizing both worst-case and average-case performance while also guaranteeing constraint satisfaction. 
+Our method reshapes the uncertainty sets by minimizing the expected performance across a contextual family of problems, subject to conditional-value-at-risk constraints.
+Our approach is very flexible, and can learn a wide variety of uncertainty sets while preserving tractability.
 We solve the constrained learning problem using a stochastic augmented Lagrangian method that relies on differentiating the solutions of the robust optimization problems with respect to the parameters of the uncertainty set.
-Due to the nonsmooth and nonconvex nature of the augmented Lagrangian function, we apply the nonsmooth conservative implicit function theorem to establish convergence to a critical point which is a locally optimal solution of the constrained problem under mild assumptions.
+Due to the nonsmooth and nonconvex nature of the augmented Lagrangian function, we apply the nonsmooth conservative implicit function theorem to establish convergence to a critical point, which is a feasible solution of the constrained problem under mild assumptions.
 Using empirical process theory, we show finite-sample probabilistic guarantees of constraint satisfaction for the resulting solutions.
 Numerical experiments show that our method outperforms traditional approaches in robust and distributionally robust optimization in terms of out-of-sample performance and constraint satisfaction guarantees.
 
 ## Dependencies
-Install dependencies with
+From the root folder, install dependencies with
 ```
-pip install git+https://github.com/stellatogrp/lropt.git@develop#egg=lropt[dev]
+pip install -e ".[dev]"
 ```
 
 ## Instructions
 ### Running experiments
-Experiments can be run from the root folder using the commands below.
+Experiments can be run from the root folder using the commands below. The code is parallelized, so it is recommended to run them on a computing cluster with 20+ cores.
 
-Inventory Problem
+Newsvendor Problem
 ```
-#!/bin/bash
-
-# Create directories
-for i in {0..8}; do
-  mkdir -p "results/inventory_results/results$i"
-done
-
-# Run experiments and plot results
-etas=(0.01 0.03 0.05 0.08 0.10 0.15 0.20 0.30)
-
-for i in "${!etas[@]}"; do
-    python inventory/inventory_4_LRO_RO.py --foldername "/results/inventory_results/results$i/" --eta "${etas[$i]}"
-    python inventory/inventory_8_LRO_RO.py --foldername "/results/inventory_results/results$i/" --eta "${etas[$i]}"
-done
-python inventory/inventory_4_DRO.py --foldername "/results/inventory_results/results8/" 
-python inventory/inventory_8_DRO.py --foldername "/results/inventory_results/results8/"
-python inventory/plot_4.py --foldername /results/inventory_results/
-python inventory/plot_8.py --foldername /results/inventory_results/
+python newsvendor/news.py
+python newsvendor/gen_csv.py
 ```
 
 Portfolio Optimization
+
+For each of the following settings: $(m=30,N=2000)$, $(m=30,N=1000)$, $(m=10,N=2000)$, $(m=10,N=1000)$, run the following with the corresponding values of $m$ and $N$. We show an example for $m=30,N=2000$.
+
 ```
-#!/bin/bash
+python portfolio/port.py --config-name=port_30_2000.yaml
+python portfolio/port_ecro.py --config-name=port_ecro_30_2000.yaml
+python portfolio/port_dro.py --config-name=port_dro_30_2000.yaml
+python portfolio/port_dro_sep.py --config-name=port_dro_sep_30_2000.yaml
+python portfolio/port_LCX_sep.py --config-name=lcx_30_2000.yaml
+python gen_csv.py --m 30 --N 2000
 
-# Create directories
-for i in {0..16}; do
-  mkdir -p "results/portfolio_results/results$i"
-done
-
-# Run experiments and plot results
-etas=(0.01 0.03 0.05 0.08 0.10 0.15 0.20 0.30)
-
-for i in "${!etas[@]}"; do
-    python portfolio/portfolio_5_LRO_RO.py --foldername "/results/portfolio_results/results$i/" --eta "${etas[$i]}"
-    python portfolio/portfolio_10_LRO_RO.py --foldername "/results/portfolio_results/results$i/" --eta "${etas[$i]}"
-    python portfolio/portfolio_5_MRO.py --foldername "/results/portfolio_results/results$((i+8))/" --eta "${etas[$i]}"
-    python portfolio/portfolio_10_MRO.py --foldername "/results/portfolio_results/results$((i+8))/" --eta "${etas[$i]}"
-done
-python portfolio/portfolio_5_DRO.py --foldername /results/portfolio_results/results16/
-python portfolio/portfolio_10_DRO.py --foldername /results/portfolio_results/results16/ 
-python portfolio/plot_5.py --foldername /results/portfolio_results/
-python portfolio/plot_10.py --foldername /results/portfolio_results/
+```
+Inventory Problem
+```
+python inventory/inv.py
+python inventory/inv_dro.py
+python inventory/inv_dro_sep.py
+python inventory/gen_csv.py
 ```

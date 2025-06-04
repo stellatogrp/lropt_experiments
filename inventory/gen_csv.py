@@ -1,17 +1,14 @@
 import numpy as np
 import pandas as pd
-import sys
-sys.path.append('..')
-import matplotlib.pyplot as plt
-path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/inventory_parallel/plots2/"
+path = "inventory/"
 R = 10
 etas = [0.01,0.05,0.10,0.12,0.15,0.20]
 objs = [0.5,1,2]
 seeds1 = [0,10,20,30,40,50,60,70,80,90]
-foldername1 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/worst_new/cvar/1.5/"
-foldername2 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/worst_new/cvar/1.5/"
-foldername3 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/worst_new/dro_sep/30/"
-foldername4 = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/inv_results/worst/dro/30/"
+foldername1 = "./results/inv/lro/"
+foldername2 = "./results/inv/lro/"
+foldername3 = "./results/inv/dro_sep/"
+foldername4 = "./results/inv/dro/"
 
 quantiles = [0.25,0.75]
 df_pre = []
@@ -25,15 +22,6 @@ for seed in range(R):
     except:
         None
 df_pre = pd.concat(df_pre)
-dfs_pre = []
-collist_grid = ["Test_val","Avg_prob_test","Validate_val","Avg_prob_validate"]
-grouped = df_pre.groupby(["Rho"], as_index=False)
-mean_vals = grouped[collist_grid].mean().add_prefix("mean_")
-dfs_grid = mean_vals
-for q in quantiles:
-    quantile_values = grouped[collist_grid].quantile(q)
-    quantile_values = grouped[collist_grid].quantile(q).add_prefix(str(q)+"_")
-    dfs_grid = pd.concat([dfs_grid, quantile_values], axis=1)
 df_mv = []
 running_ind = 0
 newfolder = foldername1+str(running_ind)
@@ -45,16 +33,6 @@ for seed in range(R):
     except:
         None
 df_mv = pd.concat(df_mv)
-dfs_mv = []
-collist_grid = ["Test_val","Avg_prob_test","Validate_val","Avg_prob_validate"]
-grouped = df_mv.groupby(["Rho"], as_index=False)
-mean_vals = grouped[collist_grid].mean().add_prefix("mean_")
-dfs_mv_grid = mean_vals
-for q in quantiles:
-    quantile_values = grouped[collist_grid].quantile(q)
-    quantile_values = grouped[collist_grid].quantile(q).add_prefix(str(q)+"_")
-    dfs_mv_grid = pd.concat([dfs_mv_grid, quantile_values], axis=1)
-dfs_mv_grid.to_csv(path+"pretrained.csv")
 df_dro1 = []
 running_ind = 0
 newfolder = foldername4+str(running_ind)
@@ -86,7 +64,6 @@ for seed in range(R):
     grouped = df_dro_temp.groupby(["Rho"], as_index=False)
     df_dro.append(grouped[collist].mean())
 df_dro = pd.concat(df_dro)
-
 
 df_nonrob = []
 running_ind = 0

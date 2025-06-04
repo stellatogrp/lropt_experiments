@@ -104,21 +104,9 @@ def portfolio_exp(cfg,hydra_out_dir,seed, initseed, sig,mu,orig_mu,N,n,train_ind
         dfgrid = result_grid.df
         dfgrid = dfgrid.drop(columns=["z_vals","x_vals"])
         dfgrid.to_csv(hydra_out_dir+'/'+str(seed)+'_'+str(context_v)+'_dro_grid.csv')
-        solvetime = 0
-        try:
-            prob.solve()
-            solvetime = prob.solver_stats.solve_time
-        except:
-            print("solving failed")
-        try:
-            data_df = {"seed":initseed+10*seed,"time": solvetime}
-            single_row_df = pd.DataFrame(data_df, index=[0])
-            single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+str(context_v)+"_vals.csv",index=False)
-        except:
-            print("save failed")
     return None
 
-@hydra.main(config_path="/scratch/gpfs/iywang/lropt_revision/lropt_experiments/lropt_experiments/port_parallel/configs",config_name = "port.yaml", version_base = None)
+@hydra.main(config_path="configs",config_name = "port_dro_sep_30_2000.yaml", version_base = None)
 def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     njobs = get_n_processes(30)

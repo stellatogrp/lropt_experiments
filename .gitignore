@@ -165,6 +165,3 @@ cython_debug/
 *.gif
 .DS_Store
 .aider*
-multirun/
-backup/
-multirun_old/

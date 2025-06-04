@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
-import sys
 import os
-sys.path.append('..')
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -14,7 +12,7 @@ arguments = parser.parse_args()
 N = arguments.N
 n = arguments.n
 
-path = "/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/lropt_experiments/port_parallel/plots/plots_4/{N}_{n}/"
+path = f"portfolio/"
 
 if not os.path.exists(path):
     os.makedirs(path)
@@ -24,12 +22,12 @@ objs = [1,1.5,2.5,3,5,8]
 etas1 = [0.05,0.1,0.12,0.15,0.2,0.3]
 objs1 = [0.9,0.6,0.5,0.4,0.2,0.1]
 seeds1 = [0,10,20,30,40,50,60,70,80,90]
-foldername1 = f"/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/worst/fixed/{N}_{n}/"
-foldername2 = f"/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/worst/bi/{N}_{n}/"
-foldername3 = f"/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/worst/dro_sep/{N}_{n}/"
-foldername4 = f"/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/worst/delage/{N}_{n}/"
-foldername5 = f"/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/worst/lcx/{N}_{n}/"
-foldername6 = f"/Users/irina.wang/Desktop/Princeton/Project2/lropt_experiments/port_results/worst/dro/{N}_{n}/"
+foldername1 = f"./results/port/lro/{n}_{N}/"
+foldername2 = f"./results/port/lro/{n}_{N}/"
+foldername3 = f"./results/port/dro_sep/{n}_{N}/"
+foldername4 = f"./results/port/ecro/{n}_{N}/"
+foldername5 = f"./results/port/lcx/{n}_{N}/0/"
+foldername6 = f"./results/port/dro/{n}_{N}/"
 quantiles = [0.25,0.75]
 
 df_pre = []
@@ -129,8 +127,7 @@ for eta in etas:
 dfs_cat = pd.concat(dfs_cat)
 
 dfs_lcx = []
-running_ind = 0
-newfolder = foldername5+str(running_ind)
+newfolder = foldername5
 for seed in seeds1:
     for comp in range(20):
         try:
@@ -334,4 +331,4 @@ for target in target_list:
     data = pd.DataFrame(data, index=[0])
     plot_data.append(data)
 plot_data = pd.concat(plot_data)
-plot_data.to_csv(path+"plot_data.csv") 
+plot_data.to_csv(path+f"plot_data_{n}_{N}.csv") 
