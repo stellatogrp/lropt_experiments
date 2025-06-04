@@ -340,6 +340,6 @@ if __name__ == "__main__":
     for j in range(num_context):
         context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
         test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
-    eps_list= np.concat([np.logspace(-4,-1,3),np.linspace(0.105,2,20),np.linspace(2.05,3,10),np.linspace(3.1,5.5,5)])
+    eps_list= np.concat([np.logspace(-4,-1,3),np.linspace(0.105,2,22),np.linspace(2.05,3,10),np.linspace(3.1,5,5)])
     main_func()
 

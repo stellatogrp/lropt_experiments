@@ -10,7 +10,7 @@ hydra:
   sweeper:
     params:
       eta: 0.10
-eta: 0.01
+eta: 0.10
 seed: 0
 test_percentage: 0.5
 validate_percentage: 0.2
@@ -18,5 +18,5 @@ n_val: 10
 m_val: 4
 initseedval: 0
 Nval: 1000
-Rvals: 10
+Rval: 10
 mroK: 30

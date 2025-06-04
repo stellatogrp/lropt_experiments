@@ -188,6 +188,6 @@ if __name__ == "__main__":
         context_inds[j]= [i for i in  train_indices  if j*num_reps <= i <= (j+1)*num_reps]
         test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
         valid_inds[j]= [i for i in valid_indices if j*num_reps <= i <= (j+1)*num_reps]
-    eps_list=np.linspace(0.1, 4.5, 50)
+    eps_list=np.linspace(0.1, 4.5, 60)
     main_func()
 
