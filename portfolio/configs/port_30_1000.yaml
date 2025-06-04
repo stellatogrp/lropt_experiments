@@ -1,0 +1,47 @@
+# defaults:
+#   - override hydra/launcher: joblib
+hydra:
+  sweep:
+    dir: results/port/30_1000
+    subdir: ${hydra.job.num}
+  job:
+    chdir: True
+  mode: MULTIRUN
+  sweeper:
+    params:
+      eta: 0.05,0.08,0.10,0.12,0.15,0.2
+      obj_scale: 1,1.5,2.5,3,5,8
+eta: 0.15
+obj_scale: 1
+seed: 0
+lr: 0.001
+num_iter: 300
+optimizer: "Adam"
+init_rho: 1.5
+init_lam: 1
+init_mu: 1
+mu_multiplier: 1.005
+test_percentage: 0.5
+save_history: False
+lr_step_size: 50
+lr_gamma: 0.7
+random_init: False
+parallel: False
+kappa: -0.01
+contextual: True
+max_iter_line_search: 100
+line_search: True
+max_batch_size: 200
+batch_percentage: 0.9
+validate_percentage: 0.2
+test_frequency: 5000
+validate_frequency: 2000
+initialize_predictor: True
+Rval: 10
+seedvals: 0
+knnnum: .1
+knn_mult: 0.95
+N_val: 1000
+n_val: 30
+target_eta: 0.1
+avg_scale: 0.5

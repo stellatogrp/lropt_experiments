@@ -11,7 +11,6 @@ requires-python = ">=3.12"
 authors = [
     { name = "Irina Wang", email = "iywang@princeton.edu" }, 
     { name = "Bartolomeo Stellato", email = "bstellato@princeton.edu" }, 
-    # TODO: add everyone
 ]
 dependencies = [
     "numpy",

@@ -1,2 +1,0 @@
-outer_iter,context_val,seed,alpha,eps,test_lcx_prob,test_lcx_obj,valid_lcx_prob,valid_lcx_obj,time,in_val,test_avg,valid_avg,test_lcx_cvar,valid_lcx_cvar
-61,8,80,0.1,0.1,0.0,-0.6258689159217289,0.0,-0.5903597431206477,82743.93566775322,0.4186326900050233,-0.8184714784556835,-0.7650488358121362,-0.5485262366889704,-0.5110697123838257

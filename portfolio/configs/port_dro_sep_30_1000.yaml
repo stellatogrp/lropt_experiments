@@ -1,0 +1,19 @@
+# defaults:
+#   - override hydra/launcher: joblib
+hydra:
+  sweep:
+    dir: results/port/dro_sep/30_1000
+    subdir: ${hydra.job.num}
+  job:
+    chdir: True
+  mode: MULTIRUN
+  sweeper:
+    params:
+      eta: 0.15
+eta: 0.01
+seed: 0
+test_percentage: 0.5
+validate_percentage: 0.2
+Rval: 10
+n_val: 30
+N_val: 1000
