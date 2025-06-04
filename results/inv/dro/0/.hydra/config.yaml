@@ -1,0 +1,10 @@
+eta: 0.1
+seed: 0
+test_percentage: 0.5
+validate_percentage: 0.2
+n_val: 10
+m_val: 4
+initseedval: 0
+Nval: 1000
+Rval: 10
+mroK: 30

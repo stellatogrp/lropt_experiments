@@ -1,0 +1,5 @@
+idx: 17
+alpha: 0.1
+eps: 0.1
+n_val: 30
+N_val: 2000
