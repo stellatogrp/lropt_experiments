@@ -133,7 +133,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed,initseed, sig,mu,orig_mu,N,n,train_indi
     settings.coverage_gamma = cfg.gam_scale
     settings.predictor = lropt.DeepNormalModel()
     settings.data = data
-    settings.constrain_cvar = False
+    settings.constraint_cvar = False
     settings.target_eta = cfg.target_eta
     try: 
         result = trainer.train(settings=settings)

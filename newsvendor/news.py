@@ -219,8 +219,8 @@ def news_exp(cfg,hydra_out_dir,seed):
     settings.target_eta = cfg.target_eta
     settings.avg_scale = cfg.avg_scale
     if cfg.eta == 0.05 and cfg.obj_scale == 1:
-        settings.predictor = lropt.LinearPredictor(predict_mean = True, pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_muslt)
-        settings.num_iter = 1 
+        settings.predictor = lropt.LinearPredictor(predict_mean = True, pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
+        settings.num_iter = 0
         result2 = trainer.train(settings=settings)
         A_fin2 = result2.A
         b_fin2 = result2.b

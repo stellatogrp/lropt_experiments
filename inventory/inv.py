@@ -271,7 +271,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
 
         if cfg.eta == 0.01 and cfg.obj_scale==0.5:
             settings.init_rho = cfg.init_rho
-            settings.num_iter = 1
+            settings.num_iter = 0
             settings.contextual = False
             result_grid = trainer.grid(rholst=eps_list,settings=settings)
             dfgrid = result_grid.df
@@ -282,7 +282,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
             settings.contextual = True
             settings.initialize_predictor = True
             settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 100,knn_cov=True,n_neighbors=int(N*0.3*0.1),knn_scale = cfg.knn_mult)
-            settings.num_iter = 1
+            settings.num_iter = 0
             result2 = trainer.train(settings=settings)
             A_fin2 = result2.A
             b_fin2 = result2.b
