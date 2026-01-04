@@ -88,7 +88,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed,initseed, sig,mu,orig_mu,N,n,train_indi
         else: 
             data_gen = True
 
-    if cfg.eta == 0.05 and cfg.obj_scale== 1:
+    if cfg.eta == 0.08 and cfg.obj_scale== 1:
         context_evals = 0
         context_probs = 0
         context_objs = 0
@@ -203,7 +203,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed,initseed, sig,mu,orig_mu,N,n,train_indi
     settings.validate_frequency = cfg.validate_frequency
     settings.initialize_predictor = cfg.initialize_predictor
     settings.num_iter = cfg.num_iter
-    settings.predictor = lropt.LinearPredictor(predict_mean = True, predict_cov = True, pretrain=True, lr=0.001,epochs = 200,knn_cov=False,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
+    settings.predictor = lropt.LinearPredictor(predict_mean = True, predict_cov = True, pretrain=True, lr=0.001,epochs = 200,knn_cov=False,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
     settings.data = data
     settings.target_eta = cfg.target_eta
     settings.avg_scale = cfg.avg_scale
@@ -231,7 +231,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed,initseed, sig,mu,orig_mu,N,n,train_indi
     except:
         print("compare failed")
 
-    if cfg.eta == 0.05 and cfg.obj_scale == 1:
+    if cfg.eta == 0.08 and cfg.obj_scale == 1:
         settings.init_rho = cfg.init_rho
         settings.num_iter = 0
         settings.contextual = False
@@ -257,11 +257,11 @@ def portfolio_exp(cfg,hydra_out_dir,seed,initseed, sig,mu,orig_mu,N,n,train_indi
         dfgrid3.to_csv(hydra_out_dir+'/'+str(seed)+'_'+'linear_pretrained_grid.csv')
 
 
-@hydra.main(config_path="configs",config_name = "port_30_2000.yaml", version_base = None)
+@hydra.main(config_path="configs",config_name = "port_10_1000.yaml", version_base = None)
 def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     njobs = get_n_processes(30)
-    R = 10
+    R = 5
     initseed = 0
     n = cfg.n_val
     N = cfg.N_val
@@ -282,10 +282,11 @@ def main_func(cfg):
       context_inds[j]= [i for i in  train_indices + list([*valid_indices]) if j*num_reps <= i <= (j+1)*num_reps]
       test_inds[j] = [i for i in test_indices if j*num_reps <= i <= (j+1)*num_reps]
     eps_list= np.concat([np.logspace(-4,-1,15),np.linspace(0.11,1,20),np.linspace(1.1,3.5,25)])
-    Parallel(n_jobs=njobs)(
-        delayed(portfolio_exp)(cfg,hydra_out_dir,r,initseed, sig,mu,orig_mu,N,n,train_indices,context,eps_list,num_context,context_inds,test_inds) for r in range(R))
+    for r in range(R):
+        portfolio_exp(cfg,hydra_out_dir,r,initseed, sig,mu,orig_mu,N,n,train_indices,context,eps_list,num_context,context_inds,test_inds)
+    # Parallel(n_jobs=njobs)(
+    #     delayed(portfolio_exp)(cfg,hydra_out_dir,r,initseed, sig,mu,orig_mu,N,n,train_indices,context,eps_list,num_context,context_inds,test_inds) for r in range(R))
     
-
 if __name__ == "__main__":
     main_func()
 

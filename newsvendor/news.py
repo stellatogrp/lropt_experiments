@@ -86,7 +86,7 @@ def news_exp(cfg,hydra_out_dir,seed):
     init = sc.linalg.sqrtm(np.cov(train.T))
     init_bval = np.mean(train, axis=0)
 
-    if cfg.eta == 0.05 and cfg.obj_scale == 1:
+    if cfg.eta == 0.25 and cfg.obj_scale == 3:
         context_evals = 0
         context_probs = 0
         context_objs = 0
@@ -218,7 +218,7 @@ def news_exp(cfg,hydra_out_dir,seed):
     settings.data = data
     settings.target_eta = cfg.target_eta
     settings.avg_scale = cfg.avg_scale
-    if cfg.eta == 0.05 and cfg.obj_scale == 1:
+    if cfg.eta == 0.25 and cfg.obj_scale == 3:
         settings.predictor = lropt.LinearPredictor(predict_mean = True, pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
         settings.num_iter = 0
         result2 = trainer.train(settings=settings)
@@ -259,7 +259,7 @@ def news_exp(cfg,hydra_out_dir,seed):
     except:
         None
 
-    if cfg.eta == 0.05 and cfg.obj_scale == 1:
+    if cfg.eta == 0.25 and cfg.obj_scale == 3:
         # mean variance set
         settings.contextual = False
         result_grid = trainer.grid(rholst=eps_list,settings=settings)
@@ -271,16 +271,18 @@ def news_exp(cfg,hydra_out_dir,seed):
 def main_func(cfg: DictConfig):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     print(f"Current working directory: {os.getcwd()}")
-    njobs = get_n_processes(30)
-    Parallel(n_jobs=njobs)(
-        delayed(news_exp)(cfg,hydra_out_dir,r) for r in range(R))
+    # njobs = get_n_processes(30)
+    # Parallel(n_jobs=njobs)(
+    #     delayed(news_exp)(cfg,hydra_out_dir,r) for r in range(R))
+    for r in range(R):
+        news_exp(cfg,hydra_out_dir,r)
     
 
 if __name__ == "__main__":
     n = 2
     init_seed = 0
-    N = 2000
-    eps_list = np.linspace(0.4,2,40)
+    N = 500
+    eps_list = np.linspace(0.6,2,20)
     k_init = np.array([4.,5.])
     R = 10
     # in order for scenario to make sense, generate only 20 contexts

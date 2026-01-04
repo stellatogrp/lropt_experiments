@@ -2,15 +2,15 @@
 #   - override hydra/launcher: joblib
 hydra:
   sweep:
-    dir: results/port/lro/10_1000
+    dir: results/port/lro/25_1000
     subdir: ${hydra.job.num}
   job:
     chdir: True
   mode: MULTIRUN
   sweeper:
     params:
-      eta: 0.05,0.08,0.10,0.12,0.15,0.2
-      obj_scale: 1,1.5,2.5,3,5,8
+      eta: 0.08,0.1,0.15
+      obj_scale: 1,1.5,3
 eta: 0.15
 obj_scale: 1
 seed: 0
@@ -37,11 +37,11 @@ validate_percentage: 0.2
 test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
-Rval: 10
+Rval: 5
 seedvals: 0
 knnnum: .1
 knn_mult: 0.95
 N_val: 1000
-n_val: 10
+n_val: 25
 target_eta: 0.1
 avg_scale: 0.5
