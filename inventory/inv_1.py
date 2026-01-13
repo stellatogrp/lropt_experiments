@@ -296,7 +296,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
     except:
         return None
 
-@hydra.main(config_path="configs",config_name = "inv.yaml", version_base = None)
+@hydra.main(config_path="configs",config_name = "inv_1.yaml", version_base = None)
 def main_func(cfg):
     hydra_out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     njobs = get_n_processes(30)
@@ -306,12 +306,12 @@ def main_func(cfg):
     
 
 if __name__ == "__main__":
-    R = 4
-    initseed = 1
+    R = 5
+    initseed = 0
     test_p = 0.5
     N = 500
     n = 10
-    m = 4
+    m = 5
     np.random.seed(27)
     y_nom = np.random.uniform(2,4,n)
     y_data = y_nom

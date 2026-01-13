@@ -2,22 +2,22 @@
 #   - override hydra/launcher: joblib
 hydra:
   sweep:
-    dir: results/inv/4_500
+    dir: results/inv/5_500
     subdir: ${hydra.job.num}
   job:
     chdir: True
   mode: MULTIRUN
   sweeper:
     params:
-      eta: 0.05,0.10,0.15,0.20
-      obj_scale: 0.5,1,2
+      eta: 0.05,0.15
+      obj_scale: 0.5,2
 eta: 0.01
 obj_scale: 0.5
 seed: 0
 lr: 0.001
 num_iter: 301
 optimizer: "Adam"
-init_rho: 1.5
+init_rho: 2
 init_lam: 2
 init_mu: 2
 mu_multiplier: 1.005
@@ -28,7 +28,7 @@ lr_gamma: 0.5
 random_init: False
 parallel: False
 kappa: -0.01
-contextual: True
+contextual: False
 max_iter_line_search: 50
 line_search: True
 max_batch_size: 30
@@ -38,8 +38,7 @@ test_frequency: 5000
 validate_frequency: 2000
 initialize_predictor: True
 serial: False
-n_val: 10
-m_val: 4
+T_val: 5
 initseedval: 0
 Nval: 500
 knnvals: 30
