@@ -17,6 +17,7 @@ dependencies = [
     "pandas",
     "matplotlib",
     "lropt @ git+https://github.com/stellatogrp/lropt@develop",
+    "marimo>=0.19.0",
 ]
 
 [tool.setuptools.packages.find]
