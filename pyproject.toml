@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "lropt_experiments"
 version = "0.1.0" # You can change this version
-description = "Experiments using lropt for optimization under uncertainty."
+description = "Experiments using cvxro for optimization under uncertainty."
 readme = "README.md"
 requires-python = ">=3.12"
 authors = [
@@ -16,7 +16,7 @@ dependencies = [
     "numpy",
     "pandas",
     "matplotlib",
-    "lropt @ git+https://github.com/stellatogrp/lropt@develop",
+    "cvxro @ git+https://github.com/stellatogrp/cvxro@develop",
 ]
 
 [tool.setuptools.packages.find]

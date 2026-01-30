@@ -7,7 +7,7 @@ import cvxpy as cp
 import scipy as sc
 import numpy as np
 import pandas as pd
-import lropt
+import cvxro
 import hydra
 import warnings
 warnings.filterwarnings("ignore")
@@ -83,15 +83,15 @@ def inv_exp(cfg,hydra_out_dir,seed):
     for context_v in range(10):
         train = data[context_inds[context_v]]
 
-        u = lropt.UncertainParameter(n,
-                                        uncertainty_set = lropt.MRO(K=train.shape[0], p=2, data=data[context_inds[context_v]+ valid_inds[context_v] + test_inds[context_v]], train_data = train, train=True))
+        u = cvxro.UncertainParameter(n,
+                                        uncertainty_set = cvxro.MRO(K=train.shape[0], p=2, data=data[context_inds[context_v]+ valid_inds[context_v] + test_inds[context_v]], train_data = train, train=True))
         # formulate cvxpy variable
         L = cp.Variable()
         s = cp.Variable(n)
         y = cp.Variable(n)
         Y = cp.Variable((n,n))
-        r = lropt.ContextParameter(n, data = y_data[context_inds[context_v]+ valid_inds[context_v] + test_inds[context_v]]) 
-        context = lropt.ContextParameter((n,m), data=context_dat[context_inds[context_v]+ valid_inds[context_v] + test_inds[context_v]])           
+        r = cvxro.ContextParameter(n, data = y_data[context_inds[context_v]+ valid_inds[context_v] + test_inds[context_v]]) 
+        context = cvxro.ContextParameter((n,m), data=context_dat[context_inds[context_v]+ valid_inds[context_v] + test_inds[context_v]])           
         Y_r = cp.Variable(n)
         # formulate objective
         objective = cp.Minimize(L)
@@ -103,18 +103,18 @@ def inv_exp(cfg,hydra_out_dir,seed):
         for idx in range(n):
             cons += [y[idx]+Y[idx]@u-s[idx]]
             cons += [y[idx]+Y[idx]@u-u[idx]]
-        constraints += [lropt.max_of_uncertain(cons)<=0]
+        constraints += [cvxro.max_of_uncertain(cons)<=0]
         constraints += [r@Y == Y_r]
         constraints += [np.ones(n)@s == C]
         constraints += [s <=c, s >=0]
         eval_exp = -r@y - r@Y@u + (t+h)@s
         # formulate Robust Problem
-        prob = lropt.RobustProblem(objective, constraints,eval_exp = eval_exp)
+        prob = cvxro.RobustProblem(objective, constraints,eval_exp = eval_exp)
 
         # Train A and b
         try:
-            trainer = lropt.Trainer(prob)
-            settings = lropt.TrainerSettings()
+            trainer = cvxro.Trainer(prob)
+            settings = cvxro.TrainerSettings()
             settings.data = data[context_inds[context_v]+ valid_inds[context_v] + test_inds[context_v]]
             settings.target_eta = 0.1
             settings.init_A = np.eye(n)

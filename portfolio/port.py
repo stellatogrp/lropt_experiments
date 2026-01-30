@@ -7,7 +7,7 @@ import cvxpy as cp
 import scipy as sc
 import numpy as np
 import pandas as pd
-import lropt
+import cvxro
 import hydra
 
 def get_n_processes(max_n=np.inf):
@@ -95,8 +95,8 @@ def portfolio_exp(cfg,hydra_out_dir,seed,initseed, sig,mu,orig_mu,N,n,train_indi
         avg_vals = 0
         quant_val = 0
         for j in range(num_context):
-            u = lropt.UncertainParameter(n,
-                                    uncertainty_set=lropt.Scenario(
+            u = cvxro.UncertainParameter(n,
+                                    uncertainty_set=cvxro.Scenario(
                                                                 data=data[context_inds[j]]))
             # Formulate the Robust Problem
             x_s = cp.Variable(n)
@@ -104,7 +104,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed,initseed, sig,mu,orig_mu,N,n,train_indi
 
             objective = cp.Minimize(t_s)
             constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
-            prob_context = lropt.RobustProblem(objective, constraints)
+            prob_context = cvxro.RobustProblem(objective, constraints)
             prob_context.solve()
             eval, prob_vio, avg, quantval = calc_eval(x_s.value, t_s.value,data[test_inds[j]],cfg.target_eta)
             context_evals += eval
@@ -126,8 +126,8 @@ def portfolio_exp(cfg,hydra_out_dir,seed,initseed, sig,mu,orig_mu,N,n,train_indi
         avg_vals = 0
         quant_val = 0
         for j in range(num_context):
-            u = lropt.UncertainParameter(n,
-                                    uncertainty_set=lropt.Scenario(
+            u = cvxro.UncertainParameter(n,
+                                    uncertainty_set=cvxro.Scenario(
                                                                 data=np.mean(data[context_inds[j]],axis=0).reshape(1,n)))
             # Formulate the Robust Problem
             x_s = cp.Variable(n)
@@ -135,7 +135,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed,initseed, sig,mu,orig_mu,N,n,train_indi
 
             objective = cp.Minimize(t_s)
             constraints = [-x_s@u <= t_s, cp.sum(x_s) == 1, x_s >= 0]
-            prob_nonrob = lropt.RobustProblem(objective, constraints)
+            prob_nonrob = cvxro.RobustProblem(objective, constraints)
             prob_nonrob.solve()
             eval, prob_vio, avg,quantval = calc_eval(x_s.value, t_s.value,data[test_inds[j]],cfg.target_eta)
             nonrob_evals += eval
@@ -154,26 +154,26 @@ def portfolio_exp(cfg,hydra_out_dir,seed,initseed, sig,mu,orig_mu,N,n,train_indi
         single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals_nonrob.csv",index=False)
 
 
-    u = lropt.UncertainParameter(n,
-                            uncertainty_set=lropt.Ellipsoidal(p=2,
+    u = cvxro.UncertainParameter(n,
+                            uncertainty_set=cvxro.Ellipsoidal(p=2,
                                                         data=data))
     # Formulate the Robust Problem
     x = cp.Variable(n)
     t = cp.Variable()
-    context_param = lropt.ContextParameter((n,2), data=context)
-    mu_param = lropt.ContextParameter(n, data=mu)
+    context_param = cvxro.ContextParameter((n,2), data=context)
+    mu_param = cvxro.ContextParameter(n, data=mu)
 
     objective = cp.Minimize(t)
     constraints = [-x@u <= t, cp.sum(x) == 1, x >= 0]
     constraints += [context_param >= -1000, mu_param >= -1000]
     eval_exp = -x @ u
 
-    prob = lropt.RobustProblem(objective, constraints, eval_exp=eval_exp)
+    prob = cvxro.RobustProblem(objective, constraints, eval_exp=eval_exp)
 
     # Train A and b
     num_iters = cfg.num_iter
-    trainer = lropt.Trainer(prob)
-    settings = lropt.TrainerSettings()
+    trainer = cvxro.Trainer(prob)
+    settings = cvxro.TrainerSettings()
     settings.lr= cfg.lr
     settings.optimizer=cfg.optimizer
     settings.seed=5
@@ -203,7 +203,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed,initseed, sig,mu,orig_mu,N,n,train_indi
     settings.validate_frequency = cfg.validate_frequency
     settings.initialize_predictor = cfg.initialize_predictor
     settings.num_iter = cfg.num_iter
-    settings.predictor = lropt.LinearPredictor(predict_mean = True, predict_cov = True, pretrain=True, lr=0.001,epochs = 200,knn_cov=False,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
+    settings.predictor = cvxro.LinearPredictor(predict_mean = True, predict_cov = True, pretrain=True, lr=0.001,epochs = 200,knn_cov=False,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult_train)
     settings.data = data
     settings.target_eta = cfg.target_eta
     settings.avg_scale = cfg.avg_scale
@@ -243,7 +243,7 @@ def portfolio_exp(cfg,hydra_out_dir,seed,initseed, sig,mu,orig_mu,N,n,train_indi
         # untrained linear
         settings.contextual = True
         settings.initialize_predictor = True
-        settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
+        settings.predictor = cvxro.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
         settings.num_iter = 0
         result2 = trainer.train(settings=settings)
         A_fin2 = result2.A

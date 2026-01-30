@@ -7,7 +7,7 @@ import cvxpy as cp
 import scipy as sc
 import numpy as np
 import pandas as pd
-import lropt
+import cvxro
 import hydra
 import warnings
 warnings.filterwarnings("ignore")
@@ -97,8 +97,8 @@ def inv_exp(cfg,hydra_out_dir,seed):
             avg_vals = 0
             quant_val = 0
             for j in range(num_context):
-                u = lropt.UncertainParameter(n,
-                                        uncertainty_set=lropt.Scenario(
+                u = cvxro.UncertainParameter(n,
+                                        uncertainty_set=cvxro.Scenario(
                                                                     data=data[context_inds[j]]))
                 # Formulate the Robust Problem
                 L = cp.Variable()
@@ -116,12 +116,12 @@ def inv_exp(cfg,hydra_out_dir,seed):
                 for idx in range(n):
                     cons += [y[idx]+Y[idx]@u-s[idx]]
                     cons += [y[idx]+Y[idx]@u-u[idx]]
-                constraints += [lropt.max_of_uncertain(cons)<=0]
+                constraints += [cvxro.max_of_uncertain(cons)<=0]
                 constraints += [r@Y == Y_r]
                 constraints += [np.ones(n)@s == C]
                 constraints += [s <=c, s >=0]
                 # formulate Robust Problem
-                prob_context = lropt.RobustProblem(objective, constraints)
+                prob_context = cvxro.RobustProblem(objective, constraints)
                 prob_context.solve()
                 eval, prob_vio,avg,quantval  = calc_eval(data[test_inds[j]],r,y.value,Y.value,t,h,d,s.value,L.value,cfg.target_eta)
                 context_evals += eval
@@ -141,8 +141,8 @@ def inv_exp(cfg,hydra_out_dir,seed):
             avg_vals = 0
             quant_val = 0
             for j in range(num_context):
-                u = lropt.UncertainParameter(n,
-                                        uncertainty_set=lropt.Scenario(
+                u = cvxro.UncertainParameter(n,
+                                        uncertainty_set=cvxro.Scenario(
                                                                     data=np.mean(data[context_inds[j]],axis=0).reshape(1,n)))
                 # Formulate the Robust Problem
                 L = cp.Variable()
@@ -160,12 +160,12 @@ def inv_exp(cfg,hydra_out_dir,seed):
                 for idx in range(n):
                     cons += [y[idx]+Y[idx]@u-s[idx]]
                     cons += [y[idx]+Y[idx]@u-u[idx]]
-                constraints += [lropt.max_of_uncertain(cons)<=0]
+                constraints += [cvxro.max_of_uncertain(cons)<=0]
                 constraints += [r@Y == Y_r]
                 constraints += [np.ones(n)@s == C]
                 constraints += [s <=c, s >=0]
                 # formulate Robust Problem
-                prob_context = lropt.RobustProblem(objective, constraints)
+                prob_context = cvxro.RobustProblem(objective, constraints)
                 prob_context.solve()
                 eval, prob_vio,avg,quantval  = calc_eval(data[test_inds[j]],r,y.value,Y.value,t,h,d,s.value,L.value,cfg.target_eta)
                 nonrob_evals += eval
@@ -183,15 +183,15 @@ def inv_exp(cfg,hydra_out_dir,seed):
             single_row_df = pd.DataFrame(data_df, index=[0])
             single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals_nonrob.csv",index=False)
 
-        u = lropt.UncertainParameter(n,
-                                        uncertainty_set = lropt.Ellipsoidal(p=2, data =data))
+        u = cvxro.UncertainParameter(n,
+                                        uncertainty_set = cvxro.Ellipsoidal(p=2, data =data))
         # formulate cvxpy variable
         L = cp.Variable()
         s = cp.Variable(n)
         y = cp.Variable(n)
         Y = cp.Variable((n,n))
-        r = lropt.ContextParameter(n, data = y_data) 
-        context = lropt.ContextParameter((n,m), data=context_dat)           
+        r = cvxro.ContextParameter(n, data = y_data) 
+        context = cvxro.ContextParameter((n,m), data=context_dat)           
         Y_r = cp.Variable(n)
         # formulate objective
         objective = cp.Minimize(L)
@@ -203,17 +203,17 @@ def inv_exp(cfg,hydra_out_dir,seed):
         for idx in range(n):
             cons += [y[idx]+Y[idx]@u-s[idx]]
             cons += [y[idx]+Y[idx]@u-u[idx]]
-        constraints += [lropt.max_of_uncertain(cons)<=0]
+        constraints += [cvxro.max_of_uncertain(cons)<=0]
         constraints += [r@Y == Y_r]
         constraints += [np.ones(n)@s == C]
         constraints += [s <=c, s >=0]
         eval_exp = -r@y - r@Y@u + (t+h)@s
         # formulate Robust Problem
-        prob = lropt.RobustProblem(objective, constraints,eval_exp = eval_exp )
+        prob = cvxro.RobustProblem(objective, constraints,eval_exp = eval_exp )
 
         # Train A and b
-        trainer = lropt.Trainer(prob)
-        settings = lropt.TrainerSettings()
+        trainer = cvxro.Trainer(prob)
+        settings = cvxro.TrainerSettings()
         settings.lr= cfg.lr
         settings.optimizer=cfg.optimizer
         settings.seed=5
@@ -242,7 +242,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
         settings.validate_frequency = cfg.validate_frequency
         settings.initialize_predictor = cfg.initialize_predictor
         settings.num_iter = cfg.num_iter
-        settings.predictor = lropt.LinearPredictor(predict_mean = True,predict_cov = True, pretrain=True, lr=0.001,epochs = 100,n_neighbors=int(N*0.1*0.3))
+        settings.predictor = cvxro.LinearPredictor(predict_mean = True,predict_cov = True, pretrain=True, lr=0.001,epochs = 100,n_neighbors=int(N*0.1*0.3))
         settings.data=data
         settings.target_eta = cfg.target_eta
         try: 
@@ -281,7 +281,7 @@ def inv_exp(cfg,hydra_out_dir,seed):
             # untrained linear
             settings.contextual = True
             settings.initialize_predictor = True
-            settings.predictor = lropt.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 100,knn_cov=True,n_neighbors=int(N*0.3*0.1),knn_scale = cfg.knn_mult)
+            settings.predictor = cvxro.LinearPredictor(predict_mean = True,pretrain=False, lr=0.001,epochs = 100,knn_cov=True,n_neighbors=int(N*0.3*0.1),knn_scale = cfg.knn_mult)
             settings.num_iter = 0
             result2 = trainer.train(settings=settings)
             A_fin2 = result2.A

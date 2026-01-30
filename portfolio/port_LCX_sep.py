@@ -7,7 +7,7 @@ import cvxpy as cp
 import numpy as np
 import time
 import pandas as pd
-import lropt
+import cvxro
 import hydra
 from utils_lcx import calc_ab_thresh
 
@@ -80,7 +80,7 @@ def create_max(u_set,n):
     constraints =[cp.sum(x) == 1, x >= 0]
     for u in u_set:
         constraints += [x@u >= t]
-    prob = lropt.RobustProblem(objective, constraints)
+    prob = cvxro.RobustProblem(objective, constraints)
     return prob, x, t
 
 def add_cut(u,v,z,data,eps,case,datamax,n,N_train):

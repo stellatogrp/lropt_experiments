@@ -2,7 +2,7 @@ import cvxpy as cp
 import scipy as sc
 import numpy as np
 import numpy.random as npr
-import lropt
+import cvxro
 import torch
 from sklearn import datasets
 import pandas as pd
@@ -94,22 +94,22 @@ def news_exp(cfg,hydra_out_dir,seed):
         quant_val = 0
         # solve for each context and average
         for j in range(num_context):
-            u = lropt.UncertainParameter(n,
-                                    uncertainty_set=lropt.Scenario(
+            u = cvxro.UncertainParameter(n,
+                                    uncertainty_set=cvxro.Scenario(
                                                                 data=data[context_inds[j]]))
             x_s = cp.Variable(n)
             t1 = cp.Variable()
             k1= init_k_data[j]
             p1 = init_p_data[j]
             objective = cp.Minimize(t1)
-            constraints = [lropt.max_of_uncertain([-p1[0]*x_s[0] - p1[1]*x_s[1],
+            constraints = [cvxro.max_of_uncertain([-p1[0]*x_s[0] - p1[1]*x_s[1],
                                                     -p1[0]*x_s[0] - p1[1]*u[1],
                                                     -p1[0]*u[0] - p1[1]*x_s[1],
                                                     -p1[0]*u[0]- p1[1]*u[1]])
                                                     + k1@x_s <= t1]
             constraints += [x_s >= 0]
 
-            prob_sc = lropt.RobustProblem(objective, constraints)
+            prob_sc = cvxro.RobustProblem(objective, constraints)
             prob_sc.solve()
             eval, prob_vio, avg,quantval = calc_eval(x_s.value, init_p_data[j], init_k_data[j],data[test_inds[j]],t1.value,cfg.target_eta)
             context_evals += eval
@@ -129,22 +129,22 @@ def news_exp(cfg,hydra_out_dir,seed):
         avg_vals = 0
         quant_val = 0
         for j in range(num_context):
-            u = lropt.UncertainParameter(n,
-                                    uncertainty_set=lropt.Scenario(
+            u = cvxro.UncertainParameter(n,
+                                    uncertainty_set=cvxro.Scenario(
                                                                 data=np.mean(data[context_inds[j]],axis=0).reshape(1,n)))
             x_s = cp.Variable(n)
             t1 = cp.Variable()
             k1= init_k_data[j]
             p1 = init_p_data[j]
             objective = cp.Minimize(t1)
-            constraints = [lropt.max_of_uncertain([-p1[0]*x_s[0] - p1[1]*x_s[1],
+            constraints = [cvxro.max_of_uncertain([-p1[0]*x_s[0] - p1[1]*x_s[1],
                                                     -p1[0]*x_s[0] - p1[1]*u[1],
                                                     -p1[0]*u[0] - p1[1]*x_s[1],
                                                     -p1[0]*u[0]- p1[1]*u[1]])
                                                     + k1@x_s <= t1]
             constraints += [x_s >= 0]
 
-            prob_sc = lropt.RobustProblem(objective, constraints)
+            prob_sc = cvxro.RobustProblem(objective, constraints)
             prob_sc.solve()
 
             eval, prob_vio,avg,quantval = calc_eval(x_s.value, init_p_data[j], init_k_data[j],data[test_inds[j]],t1.value,cfg.target_eta)
@@ -165,29 +165,29 @@ def news_exp(cfg,hydra_out_dir,seed):
         single_row_df.to_csv(hydra_out_dir+'/'+str(seed)+'_'+"vals_nonrob.csv",index=False)
 
     # Formulate uncertainty set
-    u = lropt.UncertainParameter(n,
-                            uncertainty_set=lropt.Ellipsoidal(
+    u = cvxro.UncertainParameter(n,
+                            uncertainty_set=cvxro.Ellipsoidal(
                                                         data=data))
     # Formulate the Robust Problem
     x_r = cp.Variable(n)
     t = cp.Variable()
-    k = lropt.ContextParameter(2, data=k_data)
-    p = lropt.ContextParameter(2, data=p_data)
+    k = cvxro.ContextParameter(2, data=k_data)
+    p = cvxro.ContextParameter(2, data=p_data)
     p_x = cp.Variable(n)
     objective = cp.Minimize(t)
-    constraints = [lropt.max_of_uncertain([-p[0]*x_r[0] - p[1]*x_r[1],-p[0]*x_r[0] - p_x[1]*u[1], -p_x[0]*u[0] - p[1]*x_r[1], -p_x[0]*u[0]- p_x[1]*u[1]]) + k@x_r <= t]
+    constraints = [cvxro.max_of_uncertain([-p[0]*x_r[0] - p[1]*x_r[1],-p[0]*x_r[0] - p_x[1]*u[1], -p_x[0]*u[0] - p[1]*x_r[1], -p_x[0]*u[0]- p_x[1]*u[1]]) + k@x_r <= t]
     constraints += [p_x == p]
     constraints += [x_r >= 0]
 
     eval_exp = k@x_r + cp.maximum(-p[0]*x_r[0] - p[1]*x_r[1],-p[0]*x_r[0] - p[1]*u[1], -p[0]*u[0] - p[1]*x_r[1], -p[0]*u[0]- p[1]*u[1]) 
 
-    prob = lropt.RobustProblem(objective, constraints,eval_exp = eval_exp)
+    prob = cvxro.RobustProblem(objective, constraints,eval_exp = eval_exp)
 
 
     # Train A and b
-    from lropt import Trainer
+    from cvxro import Trainer
     trainer = Trainer(prob)
-    settings = lropt.TrainerSettings()
+    settings = cvxro.TrainerSettings()
     settings.lr= cfg.lr
     settings.optimizer=cfg.optimizer
     settings.seed=5
@@ -219,7 +219,7 @@ def news_exp(cfg,hydra_out_dir,seed):
     settings.target_eta = cfg.target_eta
     settings.avg_scale = cfg.avg_scale
     if cfg.eta == 0.05 and cfg.obj_scale == 1:
-        settings.predictor = lropt.LinearPredictor(predict_mean = True, pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
+        settings.predictor = cvxro.LinearPredictor(predict_mean = True, pretrain=False, lr=0.001,epochs = 200,knn_cov=True,n_neighbors = int(0.1*N*0.3),knn_scale = cfg.knn_mult)
         settings.num_iter = 0
         result2 = trainer.train(settings=settings)
         A_fin2 = result2.A
@@ -237,7 +237,7 @@ def news_exp(cfg,hydra_out_dir,seed):
         settings.num_iter = cfg.num_iter
         settings.init_A = init
         settings.init_b = init_bval
-        settings.predictor = lropt.LinearPredictor(predict_mean = True,predict_cov = False, n_neighbors = int(0.1*N*0.3), pretrain = True,epochs = 20, lr = 0.001)
+        settings.predictor = cvxro.LinearPredictor(predict_mean = True,predict_cov = False, n_neighbors = int(0.1*N*0.3), pretrain = True,epochs = 20, lr = 0.001)
         result = trainer.train(settings=settings)
     except:
         print("training failed")

@@ -7,7 +7,7 @@ import cvxpy as cp
 import scipy as sc
 import numpy as np
 import pandas as pd
-import lropt
+import cvxro
 import hydra
 import matplotlib.pyplot as plt
 import warnings
@@ -75,24 +75,24 @@ def portfolio_exp(cfg,hydra_out_dir,seed,initseed, sig,mu,orig_mu,N,n,train_indi
             data_gen = True
     # seed = idx
 
-    u = lropt.UncertainParameter(n,
-                            uncertainty_set=lropt.MRO(K=1, p=2, data=data, train_data=train, train=True))
+    u = cvxro.UncertainParameter(n,
+                            uncertainty_set=cvxro.MRO(K=1, p=2, data=data, train_data=train, train=True))
     # Formulate the Robust Problem
     x = cp.Variable(n)
     t = cp.Variable()
-    context_param = lropt.ContextParameter((n,2), data=context)
-    mu_param = lropt.ContextParameter(n, data=mu)
+    context_param = cvxro.ContextParameter((n,2), data=context)
+    mu_param = cvxro.ContextParameter(n, data=mu)
 
     objective = cp.Minimize(t)
     constraints = [-x@u <= t, cp.sum(x) == 1, x >= 0]
     constraints += [context_param >= -1000, mu_param >= -1000]
     eval_exp = -x @ u
 
-    prob = lropt.RobustProblem(objective, constraints, eval_exp=eval_exp)
+    prob = cvxro.RobustProblem(objective, constraints, eval_exp=eval_exp)
 
     # Train A and b
-    trainer = lropt.Trainer(prob)
-    settings = lropt.TrainerSettings()
+    trainer = cvxro.Trainer(prob)
+    settings = cvxro.TrainerSettings()
     settings.data = data
     settings.target_eta = 0.1
     settings.init_A = np.eye(n)
